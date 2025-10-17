@@ -1,0 +1,203 @@
+{
+  "holdings": [
+    {
+      "owner": "EF",
+      "asset_type": "EQ",
+      "account": "SIPP",
+      "ticker": "VJPN",
+      "name": "Japan",
+      "quantity": 2094.0,
+      "last_price": 32.38,
+      "book_cost": 63637.0,
+      "current_value": 67803.72,
+      "target_weight": 7.8
+    },
+    {
+      "owner": "EF",
+      "asset_type": "EQ",
+      "account": "ISA",
+      "ticker": "BRWM",
+      "name": "Black Rock World Mining",
+      "quantity": 4223.0,
+      "last_price": 6.83309969216197,
+      "book_cost": 24958.0,
+      "current_value": 28856.18,
+      "target_weight": 3.1
+    },
+    {
+      "owner": "LF",
+      "asset_type": "EQ",
+      "account": "SIPP",
+      "ticker": "AGT",
+      "name": "AVI",
+      "quantity": 16760.0,
+      "last_price": 2.5296998806682574,
+      "book_cost": 37375.0,
+      "current_value": 42397.77,
+      "target_weight": 6.5
+    },
+    {
+      "owner": "EF",
+      "asset_type": "EQ",
+      "account": "SIPP",
+      "ticker": "B61ZBV3",
+      "name": "Ranmore Global Equity",
+      "quantity": 207.0,
+      "last_price": 168.5151690821256,
+      "book_cost": 29998.0,
+      "current_value": 34882.64,
+      "target_weight": 4.3
+    },
+    {
+      "owner": "LF",
+      "asset_type": "EQ",
+      "account": "ISA",
+      "ticker": "CLDN",
+      "name": "Caledonia",
+      "quantity": 6020.0,
+      "last_price": 3.745,
+      "book_cost": 22465.0,
+      "current_value": 22544.9,
+      "target_weight": 2.5
+    },
+    {
+      "owner": "EF",
+      "asset_type": "EQ",
+      "account": "ISA",
+      "ticker": "CEA1",
+      "name": "iShares MSCI EM Asia ETF USD Acc GBP",
+      "quantity": 154.0,
+      "last_price": 173.07999999999998,
+      "book_cost": 23169.0,
+      "current_value": 26654.32,
+      "target_weight": 3.1
+    },
+    {
+      "owner": "EF",
+      "asset_type": "EQ",
+      "account": "ISA",
+      "ticker": "CSCA",
+      "name": "Ishares Canada",
+      "quantity": 133.0,
+      "last_price": 191.75,
+      "book_cost": 22724.0,
+      "current_value": 25502.75,
+      "target_weight": 3.1
+    },
+    {
+      "owner": "LF",
+      "asset_type": "EQ",
+      "account": "ISA",
+      "ticker": "PIN",
+      "name": "Pantheon",
+      "quantity": 6379.0,
+      "last_price": 3.485999372942467,
+      "book_cost": 19966.0,
+      "current_value": 22237.19,
+      "target_weight": 2.8
+    },
+    {
+      "owner": "EF",
+      "asset_type": "MA",
+      "account": "SIPP",
+      "ticker": "CGT",
+      "name": "Capital Gearing Trust",
+      "quantity": 2403.0,
+      "last_price": 49.04749895963379,
+      "book_cost": 116473.0,
+      "current_value": 117861.14,
+      "target_weight": 12.0
+    },
+    {
+      "owner": "EF",
+      "asset_type": "MA",
+      "account": "SIPP",
+      "ticker": "RCP",
+      "name": "RIT Capital",
+      "quantity": 1229.0,
+      "last_price": 20.28379983726607,
+      "book_cost": 22478.0,
+      "current_value": 24928.79,
+      "target_weight": 5.8
+    },
+    {
+      "owner": "LF",
+      "asset_type": "MA",
+      "account": "SIPP",
+      "ticker": "RCP",
+      "name": "RIT Capital",
+      "quantity": 1179.0,
+      "last_price": 20.283799830364714,
+      "book_cost": 23639.0,
+      "current_value": 23914.6,
+      "target_weight": 5.8
+    },
+    {
+      "owner": "EF",
+      "asset_type": "MA",
+      "account": "SIPP",
+      "ticker": "RICA",
+      "name": "Ruffer",
+      "quantity": 38081.0,
+      "last_price": 2.965000131299073,
+      "book_cost": 109102.0,
+      "current_value": 112910.17,
+      "target_weight": 11.9
+    },
+    {
+      "owner": "EF",
+      "asset_type": "MA",
+      "account": "ISA",
+      "ticker": "BHMG",
+      "name": "BH Macro",
+      "quantity": 9475.0,
+      "last_price": 4.012500263852243,
+      "book_cost": 37142.0,
+      "current_value": 38018.44,
+      "target_weight": 4.6
+    },
+    {
+      "owner": "LF",
+      "asset_type": "FI",
+      "account": "ISA",
+      "ticker": "TI5G",
+      "name": "iShares $ TIPS 0-5 ETF GBP H Dist",
+      "quantity": 10351.0,
+      "last_price": 4.88,
+      "book_cost": 49991.0,
+      "current_value": 50512.88,
+      "target_weight": 6.1
+    },
+    {
+      "owner": "LF",
+      "asset_type": "AA",
+      "account": "SIPP",
+      "ticker": "SGLN",
+      "name": "Ishares Gold",
+      "quantity": 1555.0,
+      "last_price": 60.89,
+      "book_cost": 74391.0,
+      "current_value": 94683.95,
+      "target_weight": 13.0
+    },
+    {
+      "owner": "LF",
+      "asset_type": "AA",
+      "account": "SIPP",
+      "ticker": "TRY",
+      "name": "TR Property",
+      "quantity": 14672.0,
+      "last_price": 3.1993000272628134,
+      "book_cost": 45923.0,
+      "current_value": 46940.13,
+      "target_weight": 5.8
+    }
+  ],
+  "cash_balances": {
+    "Ed Forrester SIPP": 15519,
+    "Ed Forrester ISA": 4072.0,
+    "Lucy Forrester SIPP": 20490.0,
+    "Lucy Forrester ISA": 18021.0
+  },
+  "cash_target_percentage": 7.6
+}

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Rebalancer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Portfolio Rebalancing Dashboard</h1>
+            <p class="subtitle">Multi-Account Investment Portfolio Manager</p>
+        </header>
+
+        <div id="loading" class="loading">Loading portfolio data...</div>
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="content" style="display: none;">
+            <!-- Portfolio Overview -->
+            <section class="overview">
+                <div class="card">
+                    <h2>Portfolio Overview</h2>
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-label">Total Value</div>
+                            <div class="stat-value" id="total-value">£0.00</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Total Cash</div>
+                            <div class="stat-value" id="total-cash">£0.00</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Invested Assets</div>
+                            <div class="stat-value" id="total-invested">£0.00</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Holdings</div>
+                            <div class="stat-value" id="total-holdings">0</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Cash Balances by Account -->
+            <section class="cash-section">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 style="margin: 0;">Cash Balances by Account</h2>
+                        <button class="btn btn-secondary" onclick="clearAllDeposits()">Reset All Deposits</button>
+                    </div>
+                    <div id="cash-balances" class="account-grid"></div>
+                </div>
+            </section>
+
+            <!-- Portfolio Management -->
+            <section class="portfolio-management">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 style="margin: 0;">Manage Portfolio Holdings</h2>
+                        <div>
+                            <button class="btn btn-secondary" onclick="importFromCSV()">Re-import from CSV</button>
+                            <button class="btn btn-primary" onclick="showAddHoldingModal()">+ Add Holding</button>
+                        </div>
+                    </div>
+                    <p class="section-note">Edit quantities, prices, and target weights. Changes auto-update rebalancing recommendations.</p>
+                    <div class="table-container">
+                        <table id="holdings-table" class="holdings-table">
+                            <thead>
+                                <tr>
+                                    <th>Account</th>
+                                    <th>Ticker</th>
+                                    <th>Name</th>
+                                    <th>Value</th>
+                                    <th>Current %</th>
+                                    <th>Target %</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="holdings-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Actions by Account -->
+            <section class="actions">
+                <div class="card">
+                    <h2>Rebalancing Actions by Account</h2>
+                    <p class="section-note">Buy and sell actions needed to reach target portfolio weights</p>
+                    <div id="account-actions"></div>
+                </div>
+            </section>
+
+            <!-- Funding Requirements -->
+            <section class="funding">
+                <div class="card" id="funding-card">
+                    <h2>Account Funding Requirements</h2>
+                    <div id="funding-requirements"></div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Modal for Add/Edit Holding -->
+    <div id="holding-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modal-title">Add Holding</h2>
+            <form id="holding-form" onsubmit="saveHolding(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Owner *</label>
+                        <select id="form-owner" required>
+                            <option value="EF">Ed Forrester</option>
+                            <option value="LF">Lucy Forrester</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Account *</label>
+                        <select id="form-account" required>
+                            <option value="SIPP">SIPP</option>
+                            <option value="ISA">ISA</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Ticker *</label>
+                        <input type="text" id="form-ticker" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Name *</label>
+                        <input type="text" id="form-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Value (£) *</label>
+                        <input type="number" id="form-value" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Target Weight (%)</label>
+                        <input type="number" id="form-target-weight" step="0.01" value="0" placeholder="Optional">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
