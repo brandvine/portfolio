@@ -76,6 +76,15 @@ def parse_quantity(value: str) -> float:
 def load_portfolio(csv_file: str) -> Tuple[List[Holding], Dict[str, float], float]:
     """
     Load portfolio from CSV file
+    CSV Column mapping:
+    - Column A (index 0): Owner (EF/LF)
+    - Column C (index 2): Account (SIPP/ISA)
+    - Column D (index 3): Ticker
+    - Column E (index 4): Security Name
+    - Column L (index 11): Value
+    - Column N (index 13): Current Weight %
+    - Column O (index 14): Target Weight %
+
     Returns: (holdings list, cash balances dict, total portfolio value)
     """
     holdings = []
@@ -90,54 +99,63 @@ def load_portfolio(csv_file: str) -> Tuple[List[Holding], Dict[str, float], floa
             if len(row) < 15:
                 continue
 
-            # First two columns are empty, data starts at index 2
+            # Column A: Owner
             owner = row[0].strip()
-            asset_type = row[1].strip()
-            account = row[2].strip()
-
-            # Skip category header rows
-            if owner in ['Equities', 'Multi Asset', 'Fixed Income', 'Alternative Assets', 'Total']:
-                continue
 
             # Skip empty rows
             if not owner:
                 continue
 
-            # Handle cash rows
-            if asset_type == 'Cash':
-                value = parse_currency(row[11])
-                if value > 0:
-                    owner_name = "Ed Forrester" if owner == "EF" else "Lucy Forrester"
-                    account_name = f"{owner_name} {account}"
-                    cash_balances[account_name] = value
+            # Skip category header rows and totals
+            if owner in ['Equities', 'Multi Asset', 'Fixed Income', 'Alternative Assets', 'Total', '']:
                 continue
 
-            # Skip if no ticker
+            # Column C: Account
+            account = row[2].strip()
+            if not account:
+                continue
+
+            # Column D: Ticker
             ticker = row[3].strip()
-            if not ticker:
-                continue
 
+            # Column E: Security Name
             name = row[4].strip()
-            quantity = parse_quantity(row[5])
-            book_cost = parse_currency(row[9])
+
+            # Column L: Value
             current_value = parse_currency(row[11])
+
+            # Column N: Current Weight
             current_weight = parse_percentage(row[13])
+
+            # Column O: Target Weight
             target_weight = parse_percentage(row[14])
 
-            if current_value > 0:
-                holding = Holding(
-                    owner=owner,
-                    asset_type=asset_type,
-                    account=account,
-                    ticker=ticker,
-                    name=name,
-                    quantity=quantity,
-                    book_cost=book_cost,
-                    current_value=current_value,
-                    current_weight=current_weight,
-                    target_weight=target_weight
-                )
-                holdings.append(holding)
+            # Handle cash rows (no ticker)
+            if not ticker or ticker.upper() == 'CASH':
+                if current_value > 0:
+                    owner_name = "Ed Forrester" if owner == "EF" else "Lucy Forrester"
+                    account_name = f"{owner_name} {account}"
+                    cash_balances[account_name] = current_value
+                continue
+
+            # Skip rows with no value
+            if current_value <= 0:
+                continue
+
+            # Create holding with parsed data
+            holding = Holding(
+                owner=owner,
+                asset_type='EQ',  # Default to Equity (asset_type not in required columns)
+                account=account,
+                ticker=ticker,
+                name=name,
+                quantity=1.0,  # Default quantity (not in required columns)
+                book_cost=current_value,  # Use current value as book cost (not in required columns)
+                current_value=current_value,
+                current_weight=current_weight,
+                target_weight=target_weight
+            )
+            holdings.append(holding)
 
     # Calculate total portfolio value
     total_value = sum(h.current_value for h in holdings) + sum(cash_balances.values())

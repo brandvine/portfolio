@@ -59,11 +59,26 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                         <h2 style="margin: 0;">Manage Portfolio Holdings</h2>
                         <div>
-                            <button class="btn btn-secondary" onclick="importFromCSV()">Re-import from CSV</button>
+                            <input type="file" id="csv-file-input" accept=".csv" style="display: none;" onchange="handleCSVUpload(event)">
+                            <button class="btn btn-secondary" onclick="document.getElementById('csv-file-input').click()">Re-import from CSV</button>
                             <button class="btn btn-primary" onclick="showAddHoldingModal()">+ Add Holding</button>
                         </div>
                     </div>
                     <p class="section-note">Edit quantities, prices, and target weights. Changes auto-update rebalancing recommendations.</p>
+
+                    <!-- Filters -->
+                    <div class="table-filters">
+                        <div class="filter-group">
+                            <label for="account-filter">Filter by Account:</label>
+                            <select id="account-filter" onchange="applyFiltersAndSort()">
+                                <option value="all">All Accounts</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <button class="btn btn-secondary btn-small" onclick="resetFiltersAndSort()">Reset Filters & Sort</button>
+                        </div>
+                    </div>
+
                     <div class="table-container">
                         <table id="holdings-table" class="holdings-table">
                             <thead>
@@ -71,9 +86,15 @@
                                     <th>Account</th>
                                     <th>Ticker</th>
                                     <th>Name</th>
-                                    <th>Value</th>
-                                    <th>Current %</th>
-                                    <th>Target %</th>
+                                    <th class="sortable" onclick="sortTable('value')">
+                                        Value <span class="sort-indicator" id="sort-value"></span>
+                                    </th>
+                                    <th class="sortable" onclick="sortTable('current')">
+                                        Current % <span class="sort-indicator" id="sort-current"></span>
+                                    </th>
+                                    <th class="sortable" onclick="sortTable('target')">
+                                        Target % <span class="sort-indicator" id="sort-target"></span>
+                                    </th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>

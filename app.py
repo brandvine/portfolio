@@ -136,10 +136,43 @@ def update_cash_target_endpoint():
 
 @app.route('/api/import-csv', methods=['POST'])
 def import_csv_endpoint():
-    """Reimport data from CSV"""
+    """Reimport data from uploaded CSV file"""
     try:
-        reimport_from_csv()
-        return jsonify({'success': True})
+        # Check if file was uploaded
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file uploaded'}), 400
+
+        file = request.files['file']
+
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+
+        if not file.filename.endswith('.csv'):
+            return jsonify({'error': 'File must be a CSV'}), 400
+
+        # Save the uploaded file temporarily
+        import tempfile
+        import os
+
+        # Create a temporary file
+        fd, temp_path = tempfile.mkstemp(suffix='.csv')
+        try:
+            # Save uploaded file to temp location
+            file.save(temp_path)
+
+            # Import from the temp file
+            holdings_count, accounts_count = reimport_from_csv(temp_path)
+
+            return jsonify({
+                'success': True,
+                'holdings_count': holdings_count,
+                'accounts_count': accounts_count
+            })
+        finally:
+            # Clean up temp file
+            os.close(fd)
+            os.unlink(temp_path)
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -161,6 +194,10 @@ def get_portfolio_with_deposits():
         # Recalculate total value with deposits
         total_invested = sum(h['current_value'] for h in holdings_data)
         total_value = total_invested + sum(cash_balances.values())
+
+        # Recalculate current_weight for all holdings based on new total value
+        for h in holdings_data:
+            h['current_weight'] = (h['current_value'] / total_value * 100) if total_value > 0 else 0
 
         # Get cash target
         data = load_portfolio_data()
@@ -190,7 +227,7 @@ def get_portfolio_with_deposits():
         results['account_actions'] = dict(results['account_actions'])
         results['account_cash_needs'] = dict(results['account_cash_needs'])
 
-        # Add raw holdings data for the table
+        # Add raw holdings data for the table (now with recalculated weights)
         results['holdings'] = holdings_data
 
         # Add cash target

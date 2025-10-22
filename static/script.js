@@ -85,14 +85,14 @@ function renderDashboard(data, baseData) {
     // Use baseData if provided (for holdings table without deposits), otherwise use data
     const holdingsData = baseData || data;
 
-    // Render overview stats (use baseData to show actual portfolio, not with deposits)
-    renderOverview(holdingsData);
+    // Render overview stats (use data which includes deposits to show current state)
+    renderOverview(data);
 
-    // Render cash balances (use baseData to show actual balances)
+    // Render cash balances (use baseData to show actual balances before deposits)
     renderCashBalances(holdingsData.cash_balances);
 
-    // Render holdings table (always use baseData without deposits)
-    renderHoldingsTable(holdingsData);
+    // Render holdings table (use data which includes deposits to show current state)
+    renderHoldingsTable(data);
 
     // Render account actions (use data which includes deposit simulations for rebalancing)
     renderAccountActions(data);
@@ -360,10 +360,21 @@ function renderFundingRequirements(cashNeeds) {
     card.style.background = '#fff8e1';
 }
 
+// Global state for filtering and sorting
+let currentFilter = 'all';
+let currentSort = { column: null, direction: 'asc' };
+let holdingsData = null;
+
 // Render holdings table
 function renderHoldingsTable(data) {
     const tbody = document.getElementById('holdings-tbody');
     tbody.innerHTML = '';
+
+    // Store data globally for filtering/sorting
+    holdingsData = data;
+
+    // Populate account filter dropdown
+    populateAccountFilter(data.holdings);
 
     const holdings = data.holdings;
 
@@ -889,25 +900,46 @@ async function editCashTarget(element, currentTarget) {
     });
 }
 
-// Import from CSV
-async function importFromCSV() {
-    if (!confirm('This will overwrite your current portfolio data with data from the CSV file. Continue?')) {
+// Handle CSV file upload
+async function handleCSVUpload(event) {
+    const file = event.target.files[0];
+    if (!file) {
         return;
     }
 
+    if (!file.name.endsWith('.csv')) {
+        alert('Please select a CSV file');
+        event.target.value = '';
+        return;
+    }
+
+    if (!confirm('This will overwrite your current portfolio data with data from the uploaded CSV file. Continue?')) {
+        event.target.value = '';
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
     try {
         const response = await fetch('/api/import-csv', {
-            method: 'POST'
+            method: 'POST',
+            body: formData
         });
 
+        const result = await response.json();
+
         if (response.ok) {
-            alert('Portfolio data imported successfully!');
+            alert(`Portfolio data imported successfully!\n\nImported:\n- ${result.holdings_count} holdings\n- ${result.accounts_count} accounts with cash balances`);
             await loadPortfolioData();
         } else {
-            alert('Failed to import CSV data');
+            alert('Failed to import CSV data: ' + (result.error || 'Unknown error'));
         }
     } catch (error) {
         alert('Error: ' + error.message);
+    } finally {
+        // Clear the file input so the same file can be uploaded again
+        event.target.value = '';
     }
 }
 
@@ -918,6 +950,269 @@ window.onclick = function(event) {
         closeModal();
     }
 };
+
+// Populate account filter dropdown
+function populateAccountFilter(holdings) {
+    const accountFilter = document.getElementById('account-filter');
+    const currentValue = accountFilter.value;
+
+    // Get unique accounts
+    const accounts = new Set();
+    holdings.forEach(holding => {
+        const ownerName = holding.owner === 'EF' ? 'Ed Forrester' : 'Lucy Forrester';
+        const fullAccount = `${ownerName} ${holding.account}`;
+        accounts.add(fullAccount);
+    });
+
+    // Sort accounts
+    const sortedAccounts = Array.from(accounts).sort();
+
+    // Rebuild dropdown
+    accountFilter.innerHTML = '<option value="all">All Accounts</option>';
+    sortedAccounts.forEach(account => {
+        const option = document.createElement('option');
+        option.value = account;
+        option.textContent = account;
+        accountFilter.appendChild(option);
+    });
+
+    // Restore previous selection if it exists
+    if (currentValue && Array.from(accountFilter.options).some(opt => opt.value === currentValue)) {
+        accountFilter.value = currentValue;
+    }
+}
+
+// Apply filters and sorting
+function applyFiltersAndSort() {
+    if (!holdingsData) return;
+
+    currentFilter = document.getElementById('account-filter').value;
+
+    // Filter holdings
+    let filteredHoldings = holdingsData.holdings;
+    if (currentFilter !== 'all') {
+        filteredHoldings = filteredHoldings.filter(holding => {
+            const ownerName = holding.owner === 'EF' ? 'Ed Forrester' : 'Lucy Forrester';
+            const fullAccount = `${ownerName} ${holding.account}`;
+            return fullAccount === currentFilter;
+        });
+    }
+
+    // Group by ticker
+    const holdingsByTicker = {};
+    filteredHoldings.forEach(holding => {
+        if (!holdingsByTicker[holding.ticker]) {
+            holdingsByTicker[holding.ticker] = [];
+        }
+        holdingsByTicker[holding.ticker].push(holding);
+    });
+
+    // Calculate ticker totals
+    let tickerTotals = Object.keys(holdingsByTicker).map(ticker => {
+        const tickerHoldings = holdingsByTicker[ticker];
+        const tickerTotalValue = tickerHoldings.reduce((sum, h) => sum + h.current_value, 0);
+        const tickerCurrentWeight = tickerHoldings.reduce((sum, h) => sum + h.current_weight, 0);
+        const tickerTargetWeight = Math.max(...tickerHoldings.map(h => h.target_weight));
+
+        return {
+            ticker,
+            holdings: tickerHoldings,
+            totalValue: tickerTotalValue,
+            currentWeight: tickerCurrentWeight,
+            targetWeight: tickerTargetWeight,
+            name: tickerHoldings[0].name
+        };
+    });
+
+    // Apply sorting
+    if (currentSort.column) {
+        tickerTotals.sort((a, b) => {
+            let aVal, bVal;
+
+            switch(currentSort.column) {
+                case 'value':
+                    aVal = a.totalValue;
+                    bVal = b.totalValue;
+                    break;
+                case 'current':
+                    aVal = a.currentWeight;
+                    bVal = b.currentWeight;
+                    break;
+                case 'target':
+                    aVal = a.targetWeight;
+                    bVal = b.targetWeight;
+                    break;
+                default:
+                    return 0;
+            }
+
+            if (currentSort.direction === 'asc') {
+                return aVal - bVal;
+            } else {
+                return bVal - aVal;
+            }
+        });
+    } else {
+        // Default: sort by ticker alphabetically
+        tickerTotals.sort((a, b) => a.ticker.localeCompare(b.ticker));
+    }
+
+    // Update sort indicators
+    updateSortIndicators();
+
+    // Render the filtered and sorted table
+    renderFilteredTable(tickerTotals, holdingsData);
+}
+
+// Update sort indicators
+function updateSortIndicators() {
+    // Clear all indicators
+    ['value', 'current', 'target'].forEach(col => {
+        const indicator = document.getElementById(`sort-${col}`);
+        if (indicator) {
+            indicator.textContent = '';
+        }
+    });
+
+    // Set current indicator
+    if (currentSort.column) {
+        const indicator = document.getElementById(`sort-${currentSort.column}`);
+        if (indicator) {
+            indicator.textContent = currentSort.direction === 'asc' ? '▲' : '▼';
+        }
+    }
+}
+
+// Sort table by column
+function sortTable(column) {
+    if (currentSort.column === column) {
+        // Toggle direction
+        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        // New column, default to descending for value/percentages
+        currentSort.column = column;
+        currentSort.direction = 'desc';
+    }
+
+    applyFiltersAndSort();
+}
+
+// Reset filters and sorting
+function resetFiltersAndSort() {
+    currentFilter = 'all';
+    currentSort = { column: null, direction: 'asc' };
+    document.getElementById('account-filter').value = 'all';
+    updateSortIndicators();
+
+    if (holdingsData) {
+        renderHoldingsTable(holdingsData);
+    }
+}
+
+// Render filtered table
+function renderFilteredTable(tickerTotals, data) {
+    const tbody = document.getElementById('holdings-tbody');
+    tbody.innerHTML = '';
+
+    let totalValue = 0;
+    let totalCurrentWeight = 0;
+    let totalTargetWeight = 0;
+
+    tickerTotals.forEach(tickerData => {
+        const ticker = tickerData.ticker;
+        const tickerHoldings = tickerData.holdings;
+        const tickerTotalValue = tickerData.totalValue;
+        const tickerCurrentWeight = tickerData.currentWeight;
+        const tickerTargetWeight = tickerData.targetWeight;
+
+        totalValue += tickerTotalValue;
+        totalCurrentWeight += tickerCurrentWeight;
+        totalTargetWeight += tickerTargetWeight;
+
+        const tickerId = `ticker-${ticker.replace(/[^a-zA-Z0-9]/g, '')}`;
+
+        // Master row
+        const masterRow = document.createElement('tr');
+        masterRow.className = 'master-row';
+
+        // Determine first column content
+        let firstColumnContent;
+        if (tickerHoldings.length > 1) {
+            firstColumnContent = `<span class="expand-icon" onclick="toggleAccounts('${tickerId}')" style="cursor: pointer;">▶ Multiple</span>`;
+        } else {
+            const ownerName = tickerHoldings[0].owner === 'EF' ? 'Ed Forrester' : 'Lucy Forrester';
+            const fullAccount = `${ownerName} ${tickerHoldings[0].account}`;
+            firstColumnContent = `<span class="account-badge">${fullAccount}</span>`;
+        }
+
+        masterRow.innerHTML = `
+            <td>${firstColumnContent}</td>
+            <td><strong>${ticker}</strong></td>
+            <td>${tickerHoldings[0].name}</td>
+            <td class="editable" onclick="editTickerValue(this, '${ticker}')" title="Click to edit value">${formatCurrency(tickerTotalValue)}</td>
+            <td>${formatPercentage(tickerCurrentWeight)}</td>
+            <td class="editable" onclick="editTickerTarget(this, '${ticker}')" title="Click to edit target">${formatPercentage(tickerTargetWeight)}</td>
+            <td>
+                ${tickerHoldings.length === 1 ? `<button class="btn btn-danger" onclick="deleteHolding('${ticker}', '${tickerHoldings[0].account}', '${tickerHoldings[0].owner}', '${tickerHoldings[0].name}')">Delete</button>` : ''}
+            </td>
+        `;
+        tbody.appendChild(masterRow);
+
+        // Account detail rows (initially hidden)
+        if (tickerHoldings.length > 1) {
+            tickerHoldings.forEach(holding => {
+                const ownerName = holding.owner === 'EF' ? 'Ed Forrester' : 'Lucy Forrester';
+                const fullAccount = `${ownerName} ${holding.account}`;
+
+                const detailRow = document.createElement('tr');
+                detailRow.className = `detail-row ${tickerId}`;
+                detailRow.style.display = 'none';
+                detailRow.innerHTML = `
+                    <td></td>
+                    <td colspan="2" style="padding-left: 40px;"><span class="account-badge">${fullAccount}</span></td>
+                    <td class="editable" onclick="editCell(this, '${holding.ticker}', '${holding.account}', '${holding.owner}', 'current_value')" title="Click to edit value">${formatCurrency(holding.current_value)}</td>
+                    <td>${formatPercentage(holding.current_weight)}</td>
+                    <td class="editable" onclick="editCell(this, '${holding.ticker}', '${holding.account}', '${holding.owner}', 'target_weight')" title="Click to edit target">${formatPercentage(holding.target_weight)}</td>
+                    <td>
+                        <button class="btn btn-danger" onclick="deleteHolding('${holding.ticker}', '${holding.account}', '${holding.owner}', '${holding.name}')">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(detailRow);
+            });
+        }
+    });
+
+    // Add cash row
+    const cashPercentage = (data.total_cash / data.total_value * 100);
+    const cashTarget = data.cash_target_percentage || 7.6;
+
+    const cashRow = document.createElement('tr');
+    cashRow.className = 'cash-row';
+    cashRow.innerHTML = `
+        <td colspan="3" style="text-align: right;"><strong>CASH:</strong></td>
+        <td><strong>${formatCurrency(data.total_cash)}</strong></td>
+        <td><strong>${formatPercentage(cashPercentage)}</strong></td>
+        <td><strong>${formatPercentage(cashTarget)}</strong></td>
+        <td></td>
+    `;
+    tbody.appendChild(cashRow);
+
+    // Add totals row (including cash)
+    const grandTotalValue = totalValue + data.total_cash;
+    const grandTotalCurrent = totalCurrentWeight + cashPercentage;
+    const grandTotalTarget = totalTargetWeight + cashTarget;
+
+    const totalsRow = document.createElement('tr');
+    totalsRow.className = 'totals-row';
+    totalsRow.innerHTML = `
+        <td colspan="3" style="text-align: right;"><strong>GRAND TOTAL:</strong></td>
+        <td><strong>${formatCurrency(grandTotalValue)}</strong></td>
+        <td><strong>${formatPercentage(grandTotalCurrent)}</strong></td>
+        <td><strong>${formatPercentage(grandTotalTarget)}</strong></td>
+        <td></td>
+    `;
+    tbody.appendChild(totalsRow);
+}
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {

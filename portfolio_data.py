@@ -13,14 +13,35 @@ from portfolio_rebalancer import load_portfolio, Holding
 DATA_FILE = "portfolio_data.json"
 
 
-def initialize_from_csv():
-    """Initialize JSON data from CSV file"""
-    holdings, cash_balances, total_value = load_portfolio("Investments - Sheet4.csv")
+def initialize_from_csv(csv_file_path=None):
+    """
+    Initialize JSON data from CSV file
+    This function completely clears the existing data and reimports from CSV
+    CSV Column mapping:
+    - Column A: Owner (EF/LF)
+    - Column C: Account
+    - Column D: Ticker
+    - Column E: Security Name
+    - Column L: Value
+    - Column N: Current Weight %
+    - Column O: Target Weight %
 
+    Args:
+        csv_file_path: Path to CSV file. If None, uses default "Investments - Sheet4.csv"
+
+    Returns:
+        Tuple of (data dict, holdings count, accounts count)
+    """
+    if csv_file_path is None:
+        csv_file_path = "Investments - Sheet4.csv"
+
+    holdings, cash_balances, total_value = load_portfolio(csv_file_path)
+
+    # Create fresh data structure (clears all existing data)
     data = {
         'holdings': [],
         'cash_balances': cash_balances,
-        'cash_target_percentage': 7.6  # Default from CSV
+        'cash_target_percentage': 7.6  # Default cash target
     }
 
     for h in holdings:
@@ -38,19 +59,21 @@ def initialize_from_csv():
         })
 
     save_portfolio_data(data)
-    return data
+    return data, len(holdings), len(cash_balances)
 
 
 def load_portfolio_data():
     """Load portfolio data from JSON file"""
     if not os.path.exists(DATA_FILE):
-        return initialize_from_csv()
+        data, _, _ = initialize_from_csv()
+        return data
 
     try:
         with open(DATA_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
     except Exception:
-        return initialize_from_csv()
+        data, _, _ = initialize_from_csv()
+        return data
 
 
 def save_portfolio_data(data):
@@ -155,6 +178,15 @@ def get_holdings_list():
     return data['holdings'], data['cash_balances'], total_value
 
 
-def reimport_from_csv():
-    """Reimport data from CSV, overwriting current data"""
-    return initialize_from_csv()
+def reimport_from_csv(csv_file_path=None):
+    """
+    Reimport data from CSV, overwriting current data
+
+    Args:
+        csv_file_path: Path to CSV file. If None, uses default "Investments - Sheet4.csv"
+
+    Returns:
+        Tuple of (holdings count, accounts count)
+    """
+    _, holdings_count, accounts_count = initialize_from_csv(csv_file_path)
+    return holdings_count, accounts_count
