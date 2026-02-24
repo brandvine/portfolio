@@ -8,7 +8,6 @@ Price Service - Fetches live prices for portfolio holdings
 import re
 import time
 import requests
-import yfinance as yf
 
 # Mapping of portfolio tickers to Yahoo Finance symbols
 TICKER_MAP = {
@@ -38,9 +37,6 @@ FT_FUND_MAP = {
     'B61ZBV3': 'IE000WSZ17Z4:GBP',  # Ranmore Global Equity Institutional GBP Acc
     'BVYPNY2': 'IE00BVYPNY24:GBP',  # Guinness Global Equity Income Y GBP Acc
 }
-
-# Tickers that trade in GBP (not GBp/pence) - all others assumed GBp
-GBP_TICKERS = {'VJPN.L', 'CSCA.L'}
 
 # FT Markets base URL for fund price pages
 FT_BASE_URL = 'https://markets.ft.com/data/funds/tearsheet/summary?s='
@@ -98,36 +94,30 @@ def fetch_live_prices(tickers):
             symbol_to_ticker[sym] = t
 
     if symbols:
-        # Fetch in small batches to avoid Yahoo rate limits on cloud IPs
-        batch_size = 4
-        for i in range(0, len(symbols), batch_size):
-            batch = symbols[i:i + batch_size]
-            if i > 0:
-                time.sleep(2)
-
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        for sym in symbols:
             try:
-                data = yf.download(batch, period='5d', progress=False)
+                url = f'https://query1.finance.yahoo.com/v8/finance/chart/{sym}?range=5d&interval=1d'
+                resp = requests.get(url, headers=headers, timeout=10)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    meta = data['chart']['result'][0]['meta']
+                    price = meta['regularMarketPrice']
+                    currency = meta.get('currency', 'GBp')
 
-                if not data.empty:
-                    for sym in batch:
-                        try:
-                            if len(batch) == 1:
-                                close = data['Close'].dropna().iloc[-1]
-                            else:
-                                close = data['Close'][sym].dropna().iloc[-1]
+                    if currency == 'GBp':
+                        price_gbp = price / 100.0
+                    else:
+                        price_gbp = price
 
-                            price = float(close)
-                            # Convert GBp (pence) to GBP; GBP_TICKERS are already in GBP
-                            if sym not in GBP_TICKERS:
-                                price_gbp = price / 100.0
-                            else:
-                                price_gbp = price
-
-                            results[symbol_to_ticker[sym]] = price_gbp
-                        except (KeyError, IndexError):
-                            pass
+                    results[symbol_to_ticker[sym]] = price_gbp
+                else:
+                    print(f"Yahoo returned {resp.status_code} for {sym}")
             except Exception as e:
-                print(f"Error fetching Yahoo prices for batch {batch}: {e}")
+                print(f"Error fetching Yahoo price for {sym}: {e}")
+            time.sleep(0.3)
 
     # --- FT Markets fetch for OTC funds ---
     for t in tickers:
