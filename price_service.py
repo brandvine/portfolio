@@ -38,6 +38,9 @@ FT_FUND_MAP = {
     'BVYPNY2': 'IE00BVYPNY24:GBP',  # Guinness Global Equity Income Y GBP Acc
 }
 
+# Tickers that trade in GBP (not GBp/pence) - all others assumed GBp
+GBP_TICKERS = {'VJPN.L', 'CSCA.L'}
+
 # FT Markets base URL for fund price pages
 FT_BASE_URL = 'https://markets.ft.com/data/funds/tearsheet/summary?s='
 
@@ -94,15 +97,6 @@ def fetch_live_prices(tickers):
             symbol_to_ticker[sym] = t
 
     if symbols:
-        # Determine currency for each symbol
-        currency_map = {}
-        for sym in symbols:
-            try:
-                info = yf.Ticker(sym).fast_info
-                currency_map[sym] = info.get('currency', 'GBp')
-            except Exception:
-                currency_map[sym] = 'GBp'
-
         try:
             data = yf.download(symbols, period='5d', progress=False)
 
@@ -115,8 +109,8 @@ def fetch_live_prices(tickers):
                             close = data['Close'][sym].dropna().iloc[-1]
 
                         price = float(close)
-                        # Convert GBp (pence) to GBP; leave GBP as-is
-                        if currency_map.get(sym, 'GBp') == 'GBp':
+                        # Convert GBp (pence) to GBP; GBP_TICKERS are already in GBP
+                        if sym not in GBP_TICKERS:
                             price_gbp = price / 100.0
                         else:
                             price_gbp = price
