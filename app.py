@@ -9,8 +9,10 @@ from portfolio_rebalancer import analyze_rebalancing, Holding
 from portfolio_data import (
     get_holdings_list, update_holding, add_holding,
     delete_holding, update_cash_balance, update_cash_target,
-    reimport_from_csv, load_portfolio_data
+    reimport_from_csv, load_portfolio_data, refresh_prices,
+    update_holding_price, save_portfolio_data, DATA_FILE
 )
+from price_service import get_price_source, get_price_url
 import json
 
 app = Flask(__name__)
@@ -240,10 +242,11 @@ def get_portfolio_with_deposits():
 
 @app.route('/api/holdings/update-ticker-value', methods=['POST'])
 def update_ticker_value_endpoint():
-    """Update total value for a ticker (proportionally updates all accounts)"""
+    """Update value for a ticker - either by new total value or new per-unit price"""
     try:
         ticker = request.json['ticker']
-        new_value = request.json['new_value']
+        new_value = request.json.get('new_value')
+        new_price = request.json.get('new_price')
 
         data = load_portfolio_data()
         holdings = data['holdings']
@@ -254,32 +257,107 @@ def update_ticker_value_endpoint():
         if not ticker_holdings:
             return jsonify({'error': 'Ticker not found'}), 404
 
-        # Calculate current total value
-        current_total = sum(h['current_value'] for h in ticker_holdings)
+        from datetime import datetime
+        now = datetime.now().isoformat()
 
-        if current_total == 0:
-            return jsonify({'error': 'Cannot update zero-value holding'}), 400
+        if new_price is not None:
+            # Update by per-unit price - recalculate values for all accounts
+            for holding in ticker_holdings:
+                for i, h in enumerate(holdings):
+                    if (h['ticker'] == holding['ticker'] and
+                        h['account'] == holding['account'] and
+                        h['owner'] == holding['owner']):
+                        holdings[i]['last_price'] = new_price
+                        holdings[i]['current_value'] = holdings[i]['quantity'] * new_price
+                        # Recalculate P/L
+                        book_cost = holdings[i].get('book_cost', 0)
+                        if book_cost > 0:
+                            holdings[i]['pl_pct'] = round(
+                                (holdings[i]['current_value'] - book_cost) / book_cost * 100, 2
+                            )
+                        holdings[i]['price_updated'] = now
+                        break
+        elif new_value is not None:
+            # Update by total value - proportionally adjust
+            current_total = sum(h['current_value'] for h in ticker_holdings)
 
-        # Calculate proportional updates
-        ratio = new_value / current_total
+            if current_total == 0:
+                return jsonify({'error': 'Cannot update zero-value holding'}), 400
 
-        for holding in ticker_holdings:
-            # Find the holding in the main list and update it
-            for i, h in enumerate(holdings):
-                if (h['ticker'] == holding['ticker'] and
-                    h['account'] == holding['account'] and
-                    h['owner'] == holding['owner']):
-                    # Update current_value proportionally
-                    holdings[i]['current_value'] = holding['current_value'] * ratio
-                    # Update quantity proportionally (assuming price stays same)
-                    holdings[i]['quantity'] = holding['quantity'] * ratio
-                    break
+            ratio = new_value / current_total
+
+            for holding in ticker_holdings:
+                for i, h in enumerate(holdings):
+                    if (h['ticker'] == holding['ticker'] and
+                        h['account'] == holding['account'] and
+                        h['owner'] == holding['owner']):
+                        holdings[i]['current_value'] = holding['current_value'] * ratio
+                        # Update last_price based on new value
+                        qty = holdings[i].get('quantity', 1)
+                        if qty > 0:
+                            holdings[i]['last_price'] = holdings[i]['current_value'] / qty
+                        # Recalculate P/L
+                        book_cost = holdings[i].get('book_cost', 0)
+                        if book_cost > 0:
+                            holdings[i]['pl_pct'] = round(
+                                (holdings[i]['current_value'] - book_cost) / book_cost * 100, 2
+                            )
+                        holdings[i]['price_updated'] = now
+                        break
 
         # Save updated data
-        with open('portfolio_data.json', 'w') as f:
-            json.dump(data, f, indent=2)
+        save_portfolio_data(data)
 
         return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/refresh-prices', methods=['POST'])
+def refresh_prices_endpoint():
+    """Fetch live prices from Yahoo Finance and update holdings"""
+    try:
+        results = refresh_prices()
+        return jsonify({
+            'success': True,
+            'updated': len(results),
+            'prices': results
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/price-sources')
+def price_sources_endpoint():
+    """Get price source info for all holdings"""
+    try:
+        data = load_portfolio_data()
+        tickers = list(set(h['ticker'] for h in data['holdings']))
+        sources = {}
+        for t in tickers:
+            source = get_price_source(t)
+            url = get_price_url(t)
+            if source:
+                sources[t] = {'source': source, 'url': url}
+            else:
+                sources[t] = {'source': 'Manual', 'url': None}
+        return jsonify(sources)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/holdings/update-price', methods=['POST'])
+def update_price_endpoint():
+    """Manually update per-unit price for a holding"""
+    try:
+        data = request.json
+        success = update_holding_price(
+            data['ticker'],
+            data['account'],
+            data['owner'],
+            data['price']
+        )
+        return jsonify({'success': success})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -305,8 +383,7 @@ def update_ticker_target_endpoint():
             return jsonify({'error': 'Ticker not found'}), 404
 
         # Save updated data
-        with open('portfolio_data.json', 'w') as f:
-            json.dump(data, f, indent=2)
+        save_portfolio_data(data)
 
         return jsonify({'success': True})
     except Exception as e:
@@ -314,4 +391,7 @@ def update_ticker_target_endpoint():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    import os
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('RAILWAY_ENVIRONMENT') is None
+    app.run(debug=debug, host='0.0.0.0', port=port)

@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portfolio Rebalancer</title>
+    <title>Investment Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Portfolio Rebalancing Dashboard</h1>
-            <p class="subtitle">Multi-Account Investment Portfolio Manager</p>
+            <h1>Investment Dashboard</h1>
+            <p class="subtitle">Portfolio Overview & Rebalancing</p>
         </header>
 
         <div id="loading" class="loading">Loading portfolio data...</div>
@@ -35,8 +35,8 @@
                             <div class="stat-value" id="total-invested">£0.00</div>
                         </div>
                         <div class="stat-box">
-                            <div class="stat-label">Holdings</div>
-                            <div class="stat-value" id="total-holdings">0</div>
+                            <div class="stat-label">Total P/L</div>
+                            <div class="stat-value" id="total-pl">£0.00</div>
                         </div>
                     </div>
                 </div>
@@ -53,29 +53,43 @@
                 </div>
             </section>
 
-            <!-- Portfolio Management -->
+            <!-- Holdings Dashboard -->
             <section class="portfolio-management">
                 <div class="card">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h2 style="margin: 0;">Manage Portfolio Holdings</h2>
-                        <div>
+                        <h2 style="margin: 0;">Holdings</h2>
+                        <div class="header-actions">
+                            <span id="price-status" class="price-status"></span>
+                            <button class="btn btn-refresh" onclick="refreshPrices()" id="refresh-btn">
+                                <span class="refresh-icon">&#8635;</span> Refresh Prices
+                            </button>
                             <input type="file" id="csv-file-input" accept=".csv" style="display: none;" onchange="handleCSVUpload(event)">
-                            <button class="btn btn-secondary" onclick="document.getElementById('csv-file-input').click()">Re-import from CSV</button>
+                            <button class="btn btn-secondary" onclick="document.getElementById('csv-file-input').click()">Re-import CSV</button>
                             <button class="btn btn-primary" onclick="showAddHoldingModal()">+ Add Holding</button>
                         </div>
                     </div>
-                    <p class="section-note">Edit quantities, prices, and target weights. Changes auto-update rebalancing recommendations.</p>
+                    <p class="section-note">Click any value or price to edit. Prices refresh from Yahoo Finance for LSE-listed securities.</p>
 
                     <!-- Filters -->
                     <div class="table-filters">
                         <div class="filter-group">
-                            <label for="account-filter">Filter by Account:</label>
+                            <label for="account-filter">Account:</label>
                             <select id="account-filter" onchange="applyFiltersAndSort()">
                                 <option value="all">All Accounts</option>
                             </select>
                         </div>
                         <div class="filter-group">
-                            <button class="btn btn-secondary btn-small" onclick="resetFiltersAndSort()">Reset Filters & Sort</button>
+                            <label for="type-filter">Type:</label>
+                            <select id="type-filter" onchange="applyFiltersAndSort()">
+                                <option value="all">All Types</option>
+                                <option value="EQ">Equities</option>
+                                <option value="MA">Multi Asset</option>
+                                <option value="FI">Fixed Income</option>
+                                <option value="AA">Alternative Assets</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <button class="btn btn-secondary btn-small" onclick="resetFiltersAndSort()">Reset</button>
                         </div>
                     </div>
 
@@ -86,14 +100,22 @@
                                     <th>Account</th>
                                     <th>Ticker</th>
                                     <th>Name</th>
+                                    <th>Qty</th>
+                                    <th class="sortable" onclick="sortTable('book_cost')">
+                                        Book Cost <span class="sort-indicator" id="sort-book_cost"></span>
+                                    </th>
+                                    <th>Last Price</th>
                                     <th class="sortable" onclick="sortTable('value')">
                                         Value <span class="sort-indicator" id="sort-value"></span>
                                     </th>
+                                    <th class="sortable" onclick="sortTable('pl')">
+                                        P/L % <span class="sort-indicator" id="sort-pl"></span>
+                                    </th>
                                     <th class="sortable" onclick="sortTable('current')">
-                                        Current % <span class="sort-indicator" id="sort-current"></span>
+                                        Weight <span class="sort-indicator" id="sort-current"></span>
                                     </th>
                                     <th class="sortable" onclick="sortTable('target')">
-                                        Target % <span class="sort-indicator" id="sort-target"></span>
+                                        Target <span class="sort-indicator" id="sort-target"></span>
                                     </th>
                                     <th>Actions</th>
                                 </tr>
@@ -108,17 +130,27 @@
             <!-- Actions by Account -->
             <section class="actions">
                 <div class="card">
-                    <h2>Rebalancing Actions by Account</h2>
-                    <p class="section-note">Buy and sell actions needed to reach target portfolio weights</p>
-                    <div id="account-actions"></div>
+                    <h2 class="collapsible collapsed" onclick="toggleSection('actions-content')">
+                        Rebalancing Actions by Account
+                        <span class="collapse-icon">&#9654;</span>
+                    </h2>
+                    <div id="actions-content" class="collapsible-content" style="display: none;">
+                        <p class="section-note">Buy and sell actions needed to reach target portfolio weights</p>
+                        <div id="account-actions"></div>
+                    </div>
                 </div>
             </section>
 
             <!-- Funding Requirements -->
             <section class="funding">
                 <div class="card" id="funding-card">
-                    <h2>Account Funding Requirements</h2>
-                    <div id="funding-requirements"></div>
+                    <h2 class="collapsible collapsed" onclick="toggleSection('funding-content')">
+                        Account Funding Requirements
+                        <span class="collapse-icon">&#9654;</span>
+                    </h2>
+                    <div id="funding-content" class="collapsible-content" style="display: none;">
+                        <div id="funding-requirements"></div>
+                    </div>
                 </div>
             </section>
         </div>
@@ -146,6 +178,15 @@
                         </select>
                     </div>
                     <div class="form-group">
+                        <label>Asset Type *</label>
+                        <select id="form-asset-type" required>
+                            <option value="EQ">Equities</option>
+                            <option value="MA">Multi Asset</option>
+                            <option value="FI">Fixed Income</option>
+                            <option value="AA">Alternative Assets</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label>Ticker *</label>
                         <input type="text" id="form-ticker" required>
                     </div>
@@ -154,8 +195,16 @@
                         <input type="text" id="form-name" required>
                     </div>
                     <div class="form-group">
-                        <label>Value (£) *</label>
-                        <input type="number" id="form-value" step="0.01" required>
+                        <label>Quantity *</label>
+                        <input type="number" id="form-quantity" step="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Price per Unit (£) *</label>
+                        <input type="number" id="form-price" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Book Cost (total £)</label>
+                        <input type="number" id="form-book-cost" step="0.01" placeholder="Defaults to value">
                     </div>
                     <div class="form-group">
                         <label>Target Weight (%)</label>

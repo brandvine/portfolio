@@ -78,10 +78,16 @@ def load_portfolio(csv_file: str) -> Tuple[List[Holding], Dict[str, float], floa
     Load portfolio from CSV file
     CSV Column mapping:
     - Column A (index 0): Owner (EF/LF)
+    - Column B (index 1): Asset Type (EQ/MA/FI/AA)
     - Column C (index 2): Account (SIPP/ISA)
     - Column D (index 3): Ticker
     - Column E (index 4): Security Name
-    - Column L (index 11): Value
+    - Column F (index 5): Quantity
+    - Column I (index 8): Paid (per unit purchase price)
+    - Column J (index 9): Book Cost GBP (total)
+    - Column K (index 10): Last Price (per unit, may be GBX)
+    - Column L (index 11): Value GBP (total current value)
+    - Column M (index 12): P/L %
     - Column N (index 13): Current Weight %
     - Column O (index 14): Target Weight %
 
@@ -110,6 +116,9 @@ def load_portfolio(csv_file: str) -> Tuple[List[Holding], Dict[str, float], floa
             if owner in ['Equities', 'Multi Asset', 'Fixed Income', 'Alternative Assets', 'Total', '']:
                 continue
 
+            # Column B: Asset Type
+            asset_type = row[1].strip() if len(row) > 1 else 'EQ'
+
             # Column C: Account
             account = row[2].strip()
             if not account:
@@ -121,7 +130,16 @@ def load_portfolio(csv_file: str) -> Tuple[List[Holding], Dict[str, float], floa
             # Column E: Security Name
             name = row[4].strip()
 
-            # Column L: Value
+            # Column F: Quantity
+            quantity = parse_quantity(row[5]) if len(row) > 5 else 1.0
+
+            # Column I: Paid (per unit purchase price)
+            book_cost_per_unit = parse_currency(row[8]) if len(row) > 8 else 0.0
+
+            # Column J: Book Cost GBP (total)
+            book_cost = parse_currency(row[9]) if len(row) > 9 else 0.0
+
+            # Column L: Value GBP (total current value)
             current_value = parse_currency(row[11])
 
             # Column N: Current Weight
@@ -142,15 +160,23 @@ def load_portfolio(csv_file: str) -> Tuple[List[Holding], Dict[str, float], floa
             if current_value <= 0:
                 continue
 
+            # Default quantity to 1 if not parsed
+            if quantity <= 0:
+                quantity = 1.0
+
+            # Default book_cost to current_value if not available
+            if book_cost <= 0:
+                book_cost = current_value
+
             # Create holding with parsed data
             holding = Holding(
                 owner=owner,
-                asset_type='EQ',  # Default to Equity (asset_type not in required columns)
+                asset_type=asset_type if asset_type else 'EQ',
                 account=account,
                 ticker=ticker,
                 name=name,
-                quantity=1.0,  # Default quantity (not in required columns)
-                book_cost=current_value,  # Use current value as book cost (not in required columns)
+                quantity=quantity,
+                book_cost=book_cost,
                 current_value=current_value,
                 current_weight=current_weight,
                 target_weight=target_weight

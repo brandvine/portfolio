@@ -6,33 +6,33 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
     min-height: 100vh;
     padding: 20px;
     color: #333;
 }
 
 .container {
-    max-width: 1400px;
+    max-width: 1600px;
     margin: 0 auto;
 }
 
 header {
     text-align: center;
     color: white;
-    margin-bottom: 40px;
-    padding: 20px;
+    margin-bottom: 30px;
+    padding: 15px;
 }
 
 header h1 {
-    font-size: 2.5em;
-    margin-bottom: 10px;
+    font-size: 2.2em;
+    margin-bottom: 5px;
     font-weight: 700;
 }
 
 .subtitle {
-    font-size: 1.2em;
-    opacity: 0.9;
+    font-size: 1.1em;
+    opacity: 0.8;
 }
 
 .loading {
@@ -54,23 +54,23 @@ header h1 {
 .card {
     background: white;
     border-radius: 12px;
-    padding: 30px;
-    margin-bottom: 30px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .card h2 {
-    font-size: 1.8em;
-    margin-bottom: 20px;
-    color: #667eea;
-    border-bottom: 3px solid #667eea;
-    padding-bottom: 10px;
+    font-size: 1.5em;
+    margin-bottom: 15px;
+    color: #1a1a2e;
+    border-bottom: 2px solid #0f3460;
+    padding-bottom: 8px;
 }
 
 .section-note {
     color: #666;
-    font-size: 0.95em;
-    margin-bottom: 20px;
+    font-size: 0.9em;
+    margin-bottom: 15px;
     font-style: italic;
 }
 
@@ -78,32 +78,32 @@ header h1 {
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    margin-top: 20px;
+    gap: 15px;
+    margin-top: 15px;
 }
 
 .stat-box {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 25px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+    padding: 20px;
     border-radius: 10px;
     text-align: center;
     color: white;
 }
 
 .stat-label {
-    font-size: 0.9em;
+    font-size: 0.85em;
     opacity: 0.9;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 
 .stat-value {
-    font-size: 2em;
+    font-size: 1.8em;
     font-weight: 700;
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 4px;
 }
 
 .stat-percentage {
@@ -113,28 +113,38 @@ header h1 {
     letter-spacing: 0.5px;
 }
 
+.pl-positive {
+    color: #4caf50 !important;
+}
+
+.pl-negative {
+    color: #f44336 !important;
+}
+
 .editable-target {
     cursor: pointer;
     transition: all 0.2s;
-    padding: 5px;
+    padding: 4px 6px;
     border-radius: 5px;
     display: inline-block;
+    border: 1px dashed rgba(255, 255, 255, 0.3);
 }
 
 .editable-target:hover {
     background: rgba(255, 255, 255, 0.2);
+    border: 1px dashed rgba(255, 255, 255, 0.7);
 }
 
 .target-label {
     font-size: 0.9em;
     opacity: 0.8;
-    margin-left: 5px;
+    margin-left: 4px;
 }
 
 .diff {
     display: inline-block;
-    margin-left: 8px;
-    padding: 2px 6px;
+    margin-left: 6px;
+    padding: 2px 5px;
     border-radius: 3px;
     font-size: 0.85em;
     font-weight: 600;
@@ -154,407 +164,230 @@ header h1 {
 .account-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
+    gap: 15px;
 }
 
 .account-box {
     background: #f8f9fa;
-    padding: 20px;
+    padding: 15px;
     border-radius: 8px;
-    border-left: 4px solid #667eea;
+    border-left: 4px solid #0f3460;
 }
 
 .account-name {
     font-weight: 600;
     color: #333;
-    margin-bottom: 10px;
-    font-size: 1.1em;
+    margin-bottom: 8px;
+    font-size: 1em;
 }
 
-.account-cash {
-    font-size: 1.5em;
+/* Cash balance direct edit */
+.cash-balance-field {
+    margin-bottom: 4px;
+}
+
+.cash-field-label {
+    font-size: 0.85em;
+    color: #333;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 3px;
+}
+
+.cash-balance-input {
+    width: 100%;
+    padding: 8px;
+    font-size: 1.2em;
     font-weight: 700;
-    color: #667eea;
+    color: #0f3460;
+    border: 2px solid #d0d5dd;
+    border-radius: 6px;
+    background: white;
+    transition: border-color 0.2s;
 }
 
-.editable-cash {
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.editable-cash:hover {
-    background: rgba(102, 126, 234, 0.1);
-    border-radius: 5px;
-    padding: 5px;
+.cash-balance-input:focus {
+    outline: none;
+    border-color: #0f3460;
+    box-shadow: 0 0 0 3px rgba(15, 52, 96, 0.1);
 }
 
 /* Deposit Simulation */
 .deposit-field {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid rgba(102, 126, 234, 0.2);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(15, 52, 96, 0.15);
 }
 
 .deposit-label {
-    font-size: 0.9em;
-    color: #667eea;
+    font-size: 0.8em;
+    color: #888;
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     font-weight: 600;
 }
 
 .deposit-input {
     width: 100%;
-    padding: 8px;
-    border: 2px solid #667eea;
+    padding: 6px;
+    border: 1px dashed #bbb;
     border-radius: 5px;
-    font-size: 1em;
-    color: #667eea;
+    font-size: 0.9em;
+    color: #888;
     font-weight: 600;
     transition: all 0.2s;
+    background: #fafafa;
 }
 
 .deposit-input:focus {
     outline: none;
-    border-color: #764ba2;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: #0f3460;
+    color: #0f3460;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(15, 52, 96, 0.1);
 }
 
 .total-cash {
-    margin-top: 10px;
-    padding: 10px;
-    background: rgba(102, 126, 234, 0.1);
+    margin-top: 8px;
+    padding: 8px;
+    background: rgba(15, 52, 96, 0.08);
     border-radius: 5px;
-    font-size: 1.2em;
+    font-size: 1.1em;
 }
 
 .cash-label {
     font-size: 0.85em;
     opacity: 0.8;
-    margin-right: 5px;
+    margin-right: 4px;
 }
 
-/* Recommendations */
-.recommendation {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 15px;
-    border-left: 4px solid #666;
-}
-
-.recommendation.buy {
-    border-left-color: #4caf50;
-}
-
-.recommendation.sell {
-    border-left-color: #f44336;
-}
-
-.rec-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 15px;
-}
-
-.rec-action {
-    display: inline-block;
-    padding: 5px 15px;
-    border-radius: 20px;
-    font-weight: 700;
-    font-size: 0.9em;
-    margin-right: 15px;
-}
-
-.rec-action.buy {
-    background: #4caf50;
-    color: white;
-}
-
-.rec-action.sell {
-    background: #f44336;
-    color: white;
-}
-
-.rec-ticker {
-    font-weight: 700;
-    font-size: 1.2em;
-    margin-right: 10px;
-}
-
-.rec-name {
-    color: #666;
-    flex: 1;
-}
-
-.rec-details {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 10px;
-}
-
-.rec-detail {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-}
-
-.rec-detail-label {
-    color: #666;
-}
-
-.rec-detail-value {
-    font-weight: 600;
-}
-
-.rec-adjustment {
-    font-size: 1.1em;
-    padding: 10px;
-    background: white;
-    border-radius: 5px;
-    text-align: center;
-    margin-top: 10px;
-}
-
-.rec-adjustment.positive {
-    color: #4caf50;
-}
-
-.rec-adjustment.negative {
-    color: #f44336;
-}
-
-.rec-accounts {
-    font-size: 0.9em;
-    color: #666;
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid #ddd;
-}
-
-/* Account Actions */
-.account-action-card {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-}
-
-.account-title {
-    font-size: 1.3em;
-    font-weight: 700;
-    color: #667eea;
-    margin-bottom: 15px;
-}
-
-.current-cash {
-    background: white;
-    padding: 10px 15px;
-    border-radius: 5px;
-    margin-bottom: 15px;
-    font-weight: 600;
-}
-
-.actions-group {
-    margin-bottom: 15px;
-}
-
-.actions-group h4 {
-    color: #666;
-    margin-bottom: 10px;
-    font-size: 1em;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.action-item {
-    background: white;
-    padding: 15px;
-    border-radius: 5px;
-    margin-bottom: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.action-item.buy {
-    border-left: 4px solid #4caf50;
-}
-
-.action-item.sell {
-    border-left: 4px solid #f44336;
-}
-
-.action-info {
-    flex: 1;
-}
-
-.action-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-}
-
-.action-type {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-weight: 700;
-    font-size: 0.8em;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.action-type.buy {
-    background: #4caf50;
-    color: white;
-}
-
-.action-type.sell {
-    background: #f44336;
-    color: white;
-}
-
-.action-weights {
+/* Header Actions */
+.header-actions {
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 0.9em;
-    color: #666;
+    flex-wrap: wrap;
 }
 
-.weight-info {
-    padding: 2px 8px;
-    background: #f8f9fa;
+/* Price Status */
+.price-status {
+    font-size: 0.9em;
+    font-weight: 600;
+    padding: 4px 10px;
     border-radius: 4px;
 }
 
-.weight-info.target {
-    background: #e3f2fd;
-    color: #1976d2;
-    font-weight: 600;
-}
-
-.weight-arrow {
-    color: #999;
-}
-
-.action-details {
-    flex: 1;
-}
-
-.action-value {
-    font-weight: 700;
-    font-size: 1.2em;
-    padding: 8px 15px;
-    border-radius: 6px;
-    margin-left: 15px;
-}
-
-.action-value.buy {
+.price-status-success {
+    color: #4caf50;
     background: #e8f5e9;
-    color: #2e7d32;
 }
 
-.action-value.sell {
+.price-status-error {
+    color: #f44336;
     background: #ffebee;
-    color: #c62828;
 }
 
-.net-cash {
-    background: white;
-    padding: 15px;
-    border-radius: 5px;
-    margin-top: 15px;
-    text-align: center;
-    font-weight: 700;
-    font-size: 1.1em;
-}
-
-.net-cash.positive {
-    color: #4caf50;
-    border: 2px solid #4caf50;
-}
-
-.net-cash.negative {
-    color: #f44336;
-    border: 2px solid #f44336;
-}
-
-.cash-variance {
-    font-size: 0.85em;
-    margin-left: 8px;
+/* Refresh Button */
+.btn-refresh {
+    background: #0f3460;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9em;
     font-weight: 600;
-}
-
-.cash-variance.positive {
-    color: #4caf50;
-}
-
-.cash-variance.negative {
-    color: #f44336;
-}
-
-/* Funding Requirements */
-.funding-item {
-    background: #fff3cd;
-    border-left: 4px solid #ff9800;
-    padding: 15px 20px;
-    border-radius: 5px;
-    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 5px;
 }
 
-.funding-account {
-    font-weight: 600;
+.btn-refresh:hover {
+    background: #1a1a2e;
 }
 
-.funding-amount {
+.btn-refresh:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.refresh-icon {
     font-size: 1.2em;
+    display: inline-block;
+}
+
+.refresh-icon.spinning {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Price indicators */
+.price-auto {
+    cursor: pointer;
+}
+
+.price-manual {
+    cursor: pointer;
+    position: relative;
+}
+
+.manual-indicator {
+    display: inline-block;
+    background: #ff9800;
+    color: white;
+    font-size: 0.65em;
     font-weight: 700;
-    color: #ff9800;
+    padding: 1px 4px;
+    border-radius: 3px;
+    margin-left: 4px;
+    vertical-align: super;
 }
 
-.funding-success {
-    text-align: center;
-    padding: 30px;
-    color: #4caf50;
-    font-size: 1.2em;
+.source-link {
+    display: inline-block;
+    color: #0f3460;
+    font-size: 0.9em;
+    font-weight: 700;
+    text-decoration: none;
+    margin-left: 3px;
+    opacity: 0.4;
+    transition: opacity 0.2s;
+    vertical-align: middle;
 }
 
-.funding-success::before {
-    content: "✓ ";
-    font-size: 1.5em;
+.source-link:hover {
+    opacity: 1;
+    color: #e94560;
 }
 
 /* Buttons */
 .btn {
-    padding: 10px 20px;
+    padding: 8px 16px;
     border: none;
     border-radius: 6px;
-    font-size: 0.95em;
+    font-size: 0.9em;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .btn-primary {
-    background: #667eea;
+    background: #0f3460;
     color: white;
 }
 
 .btn-primary:hover {
-    background: #5568d3;
+    background: #1a1a2e;
 }
 
 .btn-secondary {
     background: #e0e0e0;
     color: #333;
-    margin-right: 10px;
 }
 
 .btn-secondary:hover {
@@ -564,24 +397,55 @@ header h1 {
 .btn-danger {
     background: #f44336;
     color: white;
-    padding: 5px 12px;
-    font-size: 0.85em;
+    padding: 4px 10px;
+    font-size: 0.8em;
 }
 
 .btn-danger:hover {
     background: #d32f2f;
 }
 
-.btn-edit {
-    background: #667eea;
-    color: white;
-    padding: 5px 12px;
+.btn-small {
+    padding: 6px 12px;
     font-size: 0.85em;
-    margin-right: 5px;
 }
 
-.btn-edit:hover {
-    background: #5568d3;
+/* Table Filters */
+.table-filters {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-group label {
+    font-weight: 600;
+    color: #333;
+    white-space: nowrap;
+    font-size: 0.9em;
+}
+
+.filter-group select {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.9em;
+    background: white;
+    cursor: pointer;
+}
+
+.filter-group select:focus {
+    outline: none;
+    border-color: #0f3460;
 }
 
 /* Table Styles */
@@ -592,24 +456,49 @@ header h1 {
 .holdings-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.9em;
+    font-size: 0.85em;
 }
 
 .holdings-table thead {
-    background: #f8f9fa;
+    background: #f0f2f5;
 }
 
 .holdings-table th {
-    padding: 12px 10px;
+    padding: 10px 8px;
     text-align: left;
     font-weight: 600;
-    border-bottom: 2px solid #667eea;
+    border-bottom: 2px solid #0f3460;
     white-space: nowrap;
+    font-size: 0.9em;
+}
+
+.holdings-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.holdings-table th.sortable:hover {
+    background: #e0e4ea;
+}
+
+.sort-indicator {
+    display: inline-block;
+    width: 12px;
+    color: #0f3460;
+    font-weight: bold;
+    font-size: 0.8em;
 }
 
 .holdings-table td {
-    padding: 10px;
-    border-bottom: 1px solid #e0e0e0;
+    padding: 8px;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.holdings-table td.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 }
 
 .holdings-table tbody tr:hover {
@@ -634,14 +523,38 @@ header h1 {
     width: 20px;
     text-align: center;
     font-size: 0.8em;
-    color: #667eea;
+    color: #0f3460;
     font-weight: bold;
 }
+
+/* Asset type header rows */
+.asset-type-header {
+    background: #e8ecf2 !important;
+}
+
+.asset-type-header td {
+    padding: 6px 10px !important;
+    color: #0f3460;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid #c8cdd5 !important;
+}
+
+.asset-type-header:hover {
+    background: #e8ecf2 !important;
+}
+
+/* Asset type badges */
+.badge-eq { background: #0f3460; }
+.badge-ma { background: #533483; }
+.badge-fi { background: #2e7d32; }
+.badge-aa { background: #e94560; }
 
 .holdings-table .cash-row {
     background: #e3f2fd;
     font-weight: 700;
-    border-top: 2px solid #2196f3;
+    border-top: 2px solid #1976d2;
 }
 
 .holdings-table .cash-row:hover {
@@ -649,15 +562,26 @@ header h1 {
 }
 
 .holdings-table .cash-row td {
-    padding: 12px 10px;
-    font-size: 1em;
-    color: #1976d2;
+    padding: 10px 8px;
+    font-size: 0.95em;
+    color: #1565c0;
+}
+
+.holdings-table .cash-row td.editable {
+    cursor: pointer;
+    position: relative;
+}
+
+.holdings-table .cash-row td.editable:hover {
+    background: #bbdefb;
+    outline: 2px dashed #1976d2;
+    outline-offset: -2px;
 }
 
 .holdings-table .totals-row {
     background: #f0f0f0;
     font-weight: 700;
-    border-top: 3px solid #667eea;
+    border-top: 3px solid #0f3460;
 }
 
 .holdings-table .totals-row:hover {
@@ -665,8 +589,8 @@ header h1 {
 }
 
 .holdings-table .totals-row td {
-    padding: 15px 10px;
-    font-size: 1em;
+    padding: 12px 8px;
+    font-size: 0.95em;
 }
 
 .holdings-table td.editable {
@@ -680,20 +604,212 @@ header h1 {
 
 .holdings-table input {
     width: 100%;
-    padding: 5px;
-    border: 1px solid #667eea;
+    padding: 4px;
+    border: 1px solid #0f3460;
     border-radius: 3px;
     font-size: 0.9em;
 }
 
 .account-badge {
     display: inline-block;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 0.85em;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 0.8em;
     font-weight: 600;
-    background: #667eea;
+    background: #0f3460;
     color: white;
+}
+
+/* Recommendations */
+.recommendation {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    border-left: 4px solid #666;
+}
+
+.recommendation.buy { border-left-color: #4caf50; }
+.recommendation.sell { border-left-color: #f44336; }
+
+/* Account Actions */
+.account-action-card {
+    background: #f8f9fa;
+    padding: 18px;
+    border-radius: 8px;
+    margin-bottom: 18px;
+}
+
+.account-title {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: #0f3460;
+    margin-bottom: 12px;
+}
+
+.current-cash {
+    background: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.actions-group {
+    margin-bottom: 12px;
+}
+
+.actions-group h4 {
+    color: #666;
+    margin-bottom: 8px;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.action-item {
+    background: white;
+    padding: 12px;
+    border-radius: 5px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.action-item.buy { border-left: 4px solid #4caf50; }
+.action-item.sell { border-left: 4px solid #f44336; }
+
+.action-info { flex: 1; }
+
+.action-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.action-type {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.action-type.buy { background: #4caf50; color: white; }
+.action-type.sell { background: #f44336; color: white; }
+
+.action-weights {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85em;
+    color: #666;
+}
+
+.weight-info {
+    padding: 2px 6px;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.weight-info.target {
+    background: #e3f2fd;
+    color: #1565c0;
+    font-weight: 600;
+}
+
+.weight-arrow { color: #999; }
+
+.action-value {
+    font-weight: 700;
+    font-size: 1.1em;
+    padding: 6px 12px;
+    border-radius: 6px;
+    margin-left: 12px;
+}
+
+.action-value.buy { background: #e8f5e9; color: #2e7d32; }
+.action-value.sell { background: #ffebee; color: #c62828; }
+
+.net-cash {
+    background: white;
+    padding: 12px;
+    border-radius: 5px;
+    margin-top: 12px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1em;
+}
+
+.net-cash.positive { color: #4caf50; border: 2px solid #4caf50; }
+.net-cash.negative { color: #f44336; border: 2px solid #f44336; }
+
+.cash-variance {
+    font-size: 0.85em;
+    margin-left: 8px;
+    font-weight: 600;
+}
+
+.cash-variance.positive { color: #4caf50; }
+.cash-variance.negative { color: #f44336; }
+
+/* Funding Requirements */
+.funding-item {
+    background: #fff3cd;
+    border-left: 4px solid #ff9800;
+    padding: 12px 18px;
+    border-radius: 5px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.funding-account { font-weight: 600; }
+
+.funding-amount {
+    font-size: 1.1em;
+    font-weight: 700;
+    color: #ff9800;
+}
+
+.funding-success {
+    text-align: center;
+    padding: 25px;
+    color: #4caf50;
+    font-size: 1.1em;
+}
+
+/* Collapsible sections */
+.collapsible {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.collapsible:hover {
+    opacity: 0.8;
+}
+
+.collapse-icon {
+    font-size: 0.7em;
+    color: #0f3460;
+    transition: transform 0.2s;
+}
+
+.collapsible-content {
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; max-height: 0; }
+    to { opacity: 1; max-height: 2000px; }
 }
 
 /* Modal */
@@ -712,7 +828,7 @@ header h1 {
 .modal-content {
     background-color: white;
     margin: 5% auto;
-    padding: 30px;
+    padding: 25px;
     border-radius: 12px;
     width: 90%;
     max-width: 700px;
@@ -727,16 +843,13 @@ header h1 {
     cursor: pointer;
 }
 
-.close:hover,
-.close:focus {
-    color: #000;
-}
+.close:hover { color: #000; }
 
 .form-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    margin: 20px 0;
+    gap: 15px;
+    margin: 15px 0;
 }
 
 .form-group {
@@ -746,52 +859,39 @@ header h1 {
 
 .form-group label {
     font-weight: 600;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     color: #333;
+    font-size: 0.9em;
 }
 
 .form-group input,
 .form-group select {
-    padding: 10px;
+    padding: 8px;
     border: 1px solid #ddd;
     border-radius: 6px;
-    font-size: 0.95em;
+    font-size: 0.9em;
 }
 
 .form-group input:focus,
 .form-group select:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #0f3460;
 }
 
 .form-actions {
     display: flex;
     justify-content: flex-end;
-    margin-top: 20px;
-    padding-top: 20px;
+    margin-top: 15px;
+    padding-top: 15px;
     border-top: 1px solid #e0e0e0;
+    gap: 10px;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-    header h1 {
-        font-size: 2em;
-    }
-
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .rec-details {
-        grid-template-columns: 1fr;
-    }
-
-    .holdings-table {
-        font-size: 0.8em;
-    }
-
-    .holdings-table th,
-    .holdings-table td {
-        padding: 8px 5px;
-    }
+    header h1 { font-size: 1.8em; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .holdings-table { font-size: 0.75em; }
+    .holdings-table th, .holdings-table td { padding: 6px 4px; }
+    .header-actions { flex-direction: column; align-items: stretch; }
 }
