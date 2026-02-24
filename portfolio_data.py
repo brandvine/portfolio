@@ -12,8 +12,17 @@ from portfolio_rebalancer import load_portfolio, Holding
 from price_service import fetch_live_prices, is_auto_priceable, get_price_source, get_price_url
 
 
-DATA_DIR = os.environ.get('DATA_DIR', os.path.dirname(os.path.abspath(__file__)))
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.environ.get('DATA_DIR', APP_DIR)
 DATA_FILE = os.path.join(DATA_DIR, "portfolio_data.json")
+
+# On first deploy, copy bundled data to persistent volume if not present
+if DATA_DIR != APP_DIR and not os.path.exists(DATA_FILE):
+    bundled = os.path.join(APP_DIR, "portfolio_data.json")
+    if os.path.exists(bundled):
+        import shutil
+        os.makedirs(DATA_DIR, exist_ok=True)
+        shutil.copy2(bundled, DATA_FILE)
 
 
 def initialize_from_csv(csv_file_path=None):
