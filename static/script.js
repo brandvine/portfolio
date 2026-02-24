@@ -1387,6 +1387,8 @@ function toggleSection(contentId) {
 }
 
 // Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-    loadPortfolioData();
+document.addEventListener('DOMContentLoaded', async function() {
+    await loadPortfolioData();
+    // Auto-refresh prices on every visit
+    refreshPrices();
 });
