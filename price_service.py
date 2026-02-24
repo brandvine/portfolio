@@ -6,6 +6,7 @@ Price Service - Fetches live prices for portfolio holdings
 """
 
 import re
+import time
 import requests
 import yfinance as yf
 
@@ -97,29 +98,36 @@ def fetch_live_prices(tickers):
             symbol_to_ticker[sym] = t
 
     if symbols:
-        try:
-            data = yf.download(symbols, period='5d', progress=False)
+        # Fetch in small batches to avoid Yahoo rate limits on cloud IPs
+        batch_size = 4
+        for i in range(0, len(symbols), batch_size):
+            batch = symbols[i:i + batch_size]
+            if i > 0:
+                time.sleep(2)
 
-            if not data.empty:
-                for sym in symbols:
-                    try:
-                        if len(symbols) == 1:
-                            close = data['Close'].dropna().iloc[-1]
-                        else:
-                            close = data['Close'][sym].dropna().iloc[-1]
+            try:
+                data = yf.download(batch, period='5d', progress=False)
 
-                        price = float(close)
-                        # Convert GBp (pence) to GBP; GBP_TICKERS are already in GBP
-                        if sym not in GBP_TICKERS:
-                            price_gbp = price / 100.0
-                        else:
-                            price_gbp = price
+                if not data.empty:
+                    for sym in batch:
+                        try:
+                            if len(batch) == 1:
+                                close = data['Close'].dropna().iloc[-1]
+                            else:
+                                close = data['Close'][sym].dropna().iloc[-1]
 
-                        results[symbol_to_ticker[sym]] = price_gbp
-                    except (KeyError, IndexError):
-                        pass
-        except Exception as e:
-            print(f"Error fetching Yahoo prices: {e}")
+                            price = float(close)
+                            # Convert GBp (pence) to GBP; GBP_TICKERS are already in GBP
+                            if sym not in GBP_TICKERS:
+                                price_gbp = price / 100.0
+                            else:
+                                price_gbp = price
+
+                            results[symbol_to_ticker[sym]] = price_gbp
+                        except (KeyError, IndexError):
+                            pass
+            except Exception as e:
+                print(f"Error fetching Yahoo prices for batch {batch}: {e}")
 
     # --- FT Markets fetch for OTC funds ---
     for t in tickers:
