@@ -177,6 +177,48 @@ def delete_holding(ticker, account, owner):
     return True
 
 
+def sell_holding(ticker, account, owner, sell_quantity, sale_price_per_unit):
+    """Sell some or all units of a holding. Reduces quantity/book_cost, adds proceeds to cash."""
+    data = load_portfolio_data()
+
+    holding = None
+    for h in data['holdings']:
+        if h['ticker'] == ticker and h['account'] == account and h['owner'] == owner:
+            holding = h
+            break
+
+    if not holding:
+        return False
+
+    proceeds = sell_quantity * sale_price_per_unit
+
+    # Add proceeds to cash
+    owner_name = "Ed Forrester" if owner == "EF" else "Lucy Forrester"
+    account_name = f"{owner_name} {account}"
+    data['cash_balances'][account_name] = data['cash_balances'].get(account_name, 0) + proceeds
+
+    if sell_quantity >= holding['quantity']:
+        # Full sale - remove holding
+        data['holdings'] = [
+            h for h in data['holdings']
+            if not (h['ticker'] == ticker and h['account'] == account and h['owner'] == owner)
+        ]
+    else:
+        # Partial sale - reduce proportionally
+        cost_per_unit = holding['book_cost'] / holding['quantity'] if holding['quantity'] > 0 else 0
+        holding['quantity'] -= sell_quantity
+        holding['book_cost'] -= sell_quantity * cost_per_unit
+        holding['current_value'] = holding['quantity'] * holding['last_price']
+        if holding['book_cost'] > 0:
+            holding['pl_pct'] = round(
+                (holding['current_value'] - holding['book_cost']) / holding['book_cost'] * 100, 2
+            )
+        holding['price_updated'] = datetime.now().isoformat()
+
+    save_portfolio_data(data)
+    return True
+
+
 def update_cash_balance(account_full_name, amount):
     """Update cash balance for an account"""
     data = load_portfolio_data()

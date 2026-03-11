@@ -219,6 +219,35 @@
         </div>
     </div>
 
+    <!-- Modal for Sell Holding -->
+    <div id="sell-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeSellModal()">&times;</span>
+            <h2>Sell Holding</h2>
+            <p id="sell-holding-info"></p>
+            <form id="sell-form" onsubmit="submitSell(event)">
+                <input type="hidden" id="sell-ticker">
+                <input type="hidden" id="sell-account">
+                <input type="hidden" id="sell-owner">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Quantity to Sell *</label>
+                        <input type="number" id="sell-quantity" step="any" min="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Sale Price per Unit (&pound;) *</label>
+                        <input type="number" id="sell-price" step="0.01" required>
+                    </div>
+                </div>
+                <p id="sell-proceeds" style="font-weight: bold; margin-top: 10px;"></p>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeSellModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Sell</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

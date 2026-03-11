@@ -8,7 +8,7 @@ from flask import Flask, render_template, jsonify, request
 from portfolio_rebalancer import analyze_rebalancing, Holding
 from portfolio_data import (
     get_holdings_list, update_holding, add_holding,
-    delete_holding, update_cash_balance, update_cash_target,
+    delete_holding, sell_holding, update_cash_balance, update_cash_target,
     reimport_from_csv, load_portfolio_data, refresh_prices,
     update_holding_price, save_portfolio_data, DATA_FILE
 )
@@ -105,6 +105,23 @@ def delete_holding_endpoint():
             data['ticker'],
             data['account'],
             data['owner']
+        )
+        return jsonify({'success': success})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/holdings/sell', methods=['POST'])
+def sell_holding_endpoint():
+    """Sell some or all units of a holding"""
+    try:
+        data = request.json
+        success = sell_holding(
+            data['ticker'],
+            data['account'],
+            data['owner'],
+            data['sell_quantity'],
+            data['sale_price']
         )
         return jsonify({'success': success})
     except Exception as e:

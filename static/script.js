@@ -539,7 +539,7 @@ function renderHoldingsTable(data) {
                 <td class="num">${formatPercentage(tickerCurrentWeight)}</td>
                 <td class="num editable" onclick="editTickerTarget(this, '${ticker}')" title="Click to edit target">${formatPercentage(tickerTargetWeight)}</td>
                 <td>
-                    ${tickerHoldings.length === 1 ? `<button class="btn btn-danger" onclick="deleteHolding('${ticker}', '${tickerHoldings[0].account}', '${tickerHoldings[0].owner}', '${tickerHoldings[0].name}')">Del</button>` : ''}
+                    ${tickerHoldings.length === 1 ? `<button class="btn btn-secondary btn-small" onclick="showSellModal('${ticker}', '${tickerHoldings[0].account}', '${tickerHoldings[0].owner}', '${tickerHoldings[0].name}', ${tickerHoldings[0].quantity}, ${tickerHoldings[0].last_price || 0})">Sell</button> <button class="btn btn-danger" onclick="deleteHolding('${ticker}', '${tickerHoldings[0].account}', '${tickerHoldings[0].owner}', '${tickerHoldings[0].name}')">Del</button>` : ''}
                 </td>
             `;
             tbody.appendChild(masterRow);
@@ -566,6 +566,7 @@ function renderHoldingsTable(data) {
                         <td class="num">${formatPercentage(holding.current_weight)}</td>
                         <td class="num editable" onclick="editCell(this, '${holding.ticker}', '${holding.account}', '${holding.owner}', 'target_weight')" title="Click to edit target">${formatPercentage(holding.target_weight)}</td>
                         <td>
+                            <button class="btn btn-secondary btn-small" onclick="showSellModal('${holding.ticker}', '${holding.account}', '${holding.owner}', '${holding.name}', ${holding.quantity}, ${holding.last_price || 0})">Sell</button>
                             <button class="btn btn-danger" onclick="deleteHolding('${holding.ticker}', '${holding.account}', '${holding.owner}', '${holding.name}')">Del</button>
                         </td>
                     `;
@@ -903,6 +904,63 @@ async function deleteHolding(ticker, account, owner, name) {
             await loadPortfolioData();
         } else {
             alert('Failed to delete holding');
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
+
+// Show sell modal
+function showSellModal(ticker, account, owner, name, quantity, lastPrice) {
+    document.getElementById('sell-ticker').value = ticker;
+    document.getElementById('sell-account').value = account;
+    document.getElementById('sell-owner').value = owner;
+    document.getElementById('sell-holding-info').textContent = `${name} (${ticker}) — ${formatQuantity(quantity)} units held`;
+    document.getElementById('sell-quantity').value = '';
+    document.getElementById('sell-quantity').max = quantity;
+    document.getElementById('sell-price').value = lastPrice.toFixed(4);
+    document.getElementById('sell-proceeds').textContent = '';
+    document.getElementById('sell-modal').style.display = 'block';
+
+    const qtyInput = document.getElementById('sell-quantity');
+    const priceInput = document.getElementById('sell-price');
+    const proceedsEl = document.getElementById('sell-proceeds');
+    const calcProceeds = () => {
+        const q = parseFloat(qtyInput.value) || 0;
+        const p = parseFloat(priceInput.value) || 0;
+        proceedsEl.textContent = q > 0 ? `Proceeds: ${formatCurrency(q * p)}` : '';
+    };
+    qtyInput.oninput = calcProceeds;
+    priceInput.oninput = calcProceeds;
+}
+
+// Close sell modal
+function closeSellModal() {
+    document.getElementById('sell-modal').style.display = 'none';
+}
+
+// Submit sell
+async function submitSell(event) {
+    event.preventDefault();
+    const sellData = {
+        ticker: document.getElementById('sell-ticker').value,
+        account: document.getElementById('sell-account').value,
+        owner: document.getElementById('sell-owner').value,
+        sell_quantity: parseFloat(document.getElementById('sell-quantity').value),
+        sale_price: parseFloat(document.getElementById('sell-price').value)
+    };
+
+    try {
+        const response = await fetch('/api/holdings/sell', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(sellData)
+        });
+        if (response.ok) {
+            closeSellModal();
+            await loadPortfolioData();
+        } else {
+            alert('Failed to sell holding');
         }
     } catch (error) {
         alert('Error: ' + error.message);
@@ -1291,7 +1349,7 @@ function renderFilteredTable(tickerTotals, data) {
                 <td class="num">${formatPercentage(tickerCurrentWeight)}</td>
                 <td class="num editable" onclick="editTickerTarget(this, '${ticker}')" title="Click to edit target">${formatPercentage(tickerTargetWeight)}</td>
                 <td>
-                    ${tickerHoldings.length === 1 ? `<button class="btn btn-danger" onclick="deleteHolding('${ticker}', '${tickerHoldings[0].account}', '${tickerHoldings[0].owner}', '${tickerHoldings[0].name}')">Del</button>` : ''}
+                    ${tickerHoldings.length === 1 ? `<button class="btn btn-secondary btn-small" onclick="showSellModal('${ticker}', '${tickerHoldings[0].account}', '${tickerHoldings[0].owner}', '${tickerHoldings[0].name}', ${tickerHoldings[0].quantity}, ${tickerHoldings[0].last_price || 0})">Sell</button> <button class="btn btn-danger" onclick="deleteHolding('${ticker}', '${tickerHoldings[0].account}', '${tickerHoldings[0].owner}', '${tickerHoldings[0].name}')">Del</button>` : ''}
                 </td>
             `;
             tbody.appendChild(masterRow);
@@ -1317,6 +1375,7 @@ function renderFilteredTable(tickerTotals, data) {
                         <td class="num">${formatPercentage(holding.current_weight)}</td>
                         <td class="num editable" onclick="editCell(this, '${holding.ticker}', '${holding.account}', '${holding.owner}', 'target_weight')">${formatPercentage(holding.target_weight)}</td>
                         <td>
+                            <button class="btn btn-secondary btn-small" onclick="showSellModal('${holding.ticker}', '${holding.account}', '${holding.owner}', '${holding.name}', ${holding.quantity}, ${holding.last_price || 0})">Sell</button>
                             <button class="btn btn-danger" onclick="deleteHolding('${holding.ticker}', '${holding.account}', '${holding.owner}', '${holding.name}')">Del</button>
                         </td>
                     `;
