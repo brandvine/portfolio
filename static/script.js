@@ -1,3 +1,24 @@
+// Auth: read token from URL param (?token=xxx) and persist in sessionStorage
+(function() {
+    const urlToken = new URLSearchParams(window.location.search).get('token');
+    if (urlToken) {
+        sessionStorage.setItem('authToken', urlToken);
+        // Remove token from URL to avoid leaking in bookmarks/history
+        const url = new URL(window.location);
+        url.searchParams.delete('token');
+        window.history.replaceState({}, '', url);
+    }
+})();
+
+function authFetch(url, options = {}) {
+    const token = sessionStorage.getItem('authToken');
+    if (token) {
+        options.headers = options.headers || {};
+        options.headers['X-Auth-Token'] = token;
+    }
+    return fetch(url, options);
+}
+
 // Format currency
 function formatCurrency(value) {
     return new Intl.NumberFormat('en-GB', {
@@ -92,8 +113,8 @@ async function loadPortfolioData() {
 
         // Fetch portfolio data and price sources in parallel
         const [baseResponse, sourcesResponse] = await Promise.all([
-            fetch('/api/portfolio'),
-            fetch('/api/price-sources')
+            authFetch('/api/portfolio'),
+            authFetch('/api/price-sources')
         ]);
 
         if (!baseResponse.ok) {
@@ -108,7 +129,7 @@ async function loadPortfolioData() {
         let data;
 
         if (totalDeposits > 0) {
-            const response = await fetch('/api/portfolio-with-deposits', {
+            const response = await authFetch('/api/portfolio-with-deposits', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({deposits: cashDeposits})
@@ -257,7 +278,7 @@ async function refreshPrices() {
     statusEl.textContent = '';
 
     try {
-        const response = await fetch('/api/refresh-prices', {
+        const response = await authFetch('/api/refresh-prices', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'}
         });
@@ -658,7 +679,7 @@ async function editTickerPrice(cell, ticker) {
 
         try {
             // Update price for all holdings of this ticker
-            const response = await fetch('/api/holdings/update-ticker-value', {
+            const response = await authFetch('/api/holdings/update-ticker-value', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ticker, new_price: newPrice})
@@ -711,7 +732,7 @@ async function editTickerValue(cell, ticker) {
         }
 
         try {
-            const response = await fetch('/api/holdings/update-ticker-value', {
+            const response = await authFetch('/api/holdings/update-ticker-value', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ticker, new_value: newValue})
@@ -767,7 +788,7 @@ async function editTickerTarget(cell, ticker) {
         }
 
         try {
-            const response = await fetch('/api/holdings/update-ticker-target', {
+            const response = await authFetch('/api/holdings/update-ticker-target', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ticker, new_target: newValue})
@@ -827,7 +848,7 @@ function editCell(cell, ticker, account, owner, field) {
         updates[field] = newValue;
 
         try {
-            const response = await fetch('/api/holdings/update', {
+            const response = await authFetch('/api/holdings/update', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ticker, account, owner, updates})
@@ -872,7 +893,7 @@ async function saveCashBalance(account, value) {
     clearTimeout(cashSaveTimeout);
     cashSaveTimeout = setTimeout(async () => {
         try {
-            const response = await fetch('/api/cash/update', {
+            const response = await authFetch('/api/cash/update', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({account, amount: newValue})
@@ -894,7 +915,7 @@ async function deleteHolding(ticker, account, owner, name) {
     if (!confirm(`Are you sure you want to delete ${name} (${ticker})?`)) return;
 
     try {
-        const response = await fetch('/api/holdings/delete', {
+        const response = await authFetch('/api/holdings/delete', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ticker, account, owner})
@@ -951,7 +972,7 @@ async function submitSell(event) {
     };
 
     try {
-        const response = await fetch('/api/holdings/sell', {
+        const response = await authFetch('/api/holdings/sell', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(sellData)
@@ -1002,7 +1023,7 @@ async function saveHolding(event) {
     };
 
     try {
-        const response = await fetch('/api/holdings/add', {
+        const response = await authFetch('/api/holdings/add', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(holdingData)
@@ -1058,7 +1079,7 @@ async function editCashTarget(element, currentTarget) {
         }
 
         try {
-            const response = await fetch('/api/cash-target/update', {
+            const response = await authFetch('/api/cash-target/update', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({target_percentage: newValue})
@@ -1104,7 +1125,7 @@ async function handleCSVUpload(event) {
     formData.append('file', file);
 
     try {
-        const response = await fetch('/api/import-csv', {
+        const response = await authFetch('/api/import-csv', {
             method: 'POST',
             body: formData
         });

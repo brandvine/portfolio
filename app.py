@@ -4,6 +4,12 @@ Portfolio Rebalancer Web Application
 Flask backend serving portfolio analysis data
 """
 
+import json
+import math
+import os
+import logging
+from functools import wraps
+
 from flask import Flask, render_template, jsonify, request
 from portfolio_rebalancer import analyze_rebalancing, Holding
 from portfolio_data import (
@@ -13,9 +19,45 @@ from portfolio_data import (
     update_holding_price, save_portfolio_data, DATA_FILE
 )
 from price_service import get_price_source, get_price_url
-import json
 
 app = Flask(__name__)
+
+# --- Authentication ---
+APP_PASSWORD = os.environ.get('APP_PASSWORD', '')
+
+
+def require_auth(f):
+    """Simple token auth via APP_PASSWORD environment variable."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not APP_PASSWORD:
+            return f(*args, **kwargs)  # No password set = auth disabled
+        token = request.headers.get('X-Auth-Token') or request.args.get('token')
+        if token != APP_PASSWORD:
+            return jsonify({'error': 'Unauthorized'}), 401
+        return f(*args, **kwargs)
+    return decorated
+
+
+# --- Input validation helpers ---
+def validate_positive_number(value, name):
+    """Ensure value is a finite positive number."""
+    if not isinstance(value, (int, float)):
+        raise ValueError(f"{name} must be a number")
+    if math.isnan(value) or math.isinf(value):
+        raise ValueError(f"{name} must be a finite number")
+    if value <= 0:
+        raise ValueError(f"{name} must be positive")
+
+
+def validate_non_negative_number(value, name):
+    """Ensure value is a finite non-negative number."""
+    if not isinstance(value, (int, float)):
+        raise ValueError(f"{name} must be a number")
+    if math.isnan(value) or math.isinf(value):
+        raise ValueError(f"{name} must be a finite number")
+    if value < 0:
+        raise ValueError(f"{name} must not be negative")
 
 
 @app.route('/')
@@ -25,6 +67,7 @@ def index():
 
 
 @app.route('/api/portfolio')
+@require_auth
 def get_portfolio_data():
     """API endpoint to get portfolio analysis data"""
     try:
@@ -37,7 +80,6 @@ def get_portfolio_data():
         # Create Holding objects for analysis
         holdings = []
         for h in holdings_data:
-            owner_name = "Ed Forrester" if h['owner'] == "EF" else "Lucy Forrester"
             holding = Holding(
                 owner=h['owner'],
                 asset_type=h['asset_type'],
@@ -66,37 +108,59 @@ def get_portfolio_data():
 
         return jsonify(results)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.exception("Error in get_portfolio_data")
+        return jsonify({'error': 'Internal server error'}), 500
+
+
+# Allowed fields for holding updates (prevents mass assignment)
+ALLOWED_HOLDING_UPDATE_FIELDS = {'quantity', 'last_price', 'book_cost', 'name', 'target_weight'}
 
 
 @app.route('/api/holdings/update', methods=['POST'])
+@require_auth
 def update_holding_endpoint():
     """Update a holding"""
     try:
         data = request.json
+        # Sanitize updates to allowed fields only
+        raw_updates = data.get('updates', {})
+        updates = {k: v for k, v in raw_updates.items() if k in ALLOWED_HOLDING_UPDATE_FIELDS}
+        if not updates:
+            return jsonify({'error': 'No valid update fields provided'}), 400
+
         success = update_holding(
             data['ticker'],
             data['account'],
             data['owner'],
-            data['updates']
+            updates
         )
         return jsonify({'success': success})
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.exception("Error in update_holding_endpoint")
+        return jsonify({'error': 'Internal server error'}), 500
 
 
 @app.route('/api/holdings/add', methods=['POST'])
+@require_auth
 def add_holding_endpoint():
     """Add a new holding"""
     try:
         data = request.json
+        validate_positive_number(data.get('quantity', 0), 'quantity')
+        validate_positive_number(data.get('last_price', 0), 'last_price')
         success = add_holding(data)
         return jsonify({'success': success})
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.exception("Error in add_holding_endpoint")
+        return jsonify({'error': 'Internal server error'}), 500
 
 
 @app.route('/api/holdings/delete', methods=['POST'])
+@require_auth
 def delete_holding_endpoint():
     """Delete a holding"""
     try:
@@ -108,14 +172,18 @@ def delete_holding_endpoint():
         )
         return jsonify({'success': success})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.exception("Error in delete_holding_endpoint")
+        return jsonify({'error': 'Internal server error'}), 500
 
 
 @app.route('/api/holdings/sell', methods=['POST'])
+@require_auth
 def sell_holding_endpoint():
     """Sell some or all units of a holding"""
     try:
         data = request.json
+        validate_positive_number(data['sell_quantity'], 'sell_quantity')
+        validate_positive_number(data['sale_price'], 'sale_price')
         success = sell_holding(
             data['ticker'],
             data['account'],
@@ -124,39 +192,57 @@ def sell_holding_endpoint():
             data['sale_price']
         )
         return jsonify({'success': success})
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.exception("Error in sell_holding_endpoint")
+        return jsonify({'error': 'Internal server error'}), 500
 
 
 @app.route('/api/cash/update', methods=['POST'])
+@require_auth
 def update_cash_endpoint():
     """Update cash balance"""
     try:
         data = request.json
+        validate_non_negative_number(data['amount'], 'amount')
         success = update_cash_balance(
             data['account'],
             data['amount']
         )
         return jsonify({'success': success})
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.exception("Error in update_cash_endpoint")
+        return jsonify({'error': 'Internal server error'}), 500
 
 
 @app.route('/api/cash-target/update', methods=['POST'])
+@require_auth
 def update_cash_target_endpoint():
     """Update cash target percentage"""
     try:
         data = request.json
+        validate_non_negative_number(data['target_percentage'], 'target_percentage')
+        if data['target_percentage'] > 100:
+            return jsonify({'error': 'target_percentage must be 100 or less'}), 400
         success = update_cash_target(data['target_percentage'])
         return jsonify({'success': success})
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.exception("Error in update_cash_target_endpoint")
+        return jsonify({'error': 'Internal server error'}), 500
 
 
 @app.route('/api/import-csv', methods=['POST'])
+@require_auth
 def import_csv_endpoint():
     """Reimport data from uploaded CSV file"""
     try:
+        import tempfile
+
         # Check if file was uploaded
         if 'file' not in request.files:
             return jsonify({'error': 'No file uploaded'}), 400
@@ -168,10 +254,6 @@ def import_csv_endpoint():
 
         if not file.filename.endswith('.csv'):
             return jsonify({'error': 'File must be a CSV'}), 400
-
-        # Save the uploaded file temporarily
-        import tempfile
-        import os
 
         # Create a temporary file
         fd, temp_path = tempfile.mkstemp(suffix='.csv')
@@ -193,10 +275,12 @@ def import_csv_endpoint():
             os.unlink(temp_path)
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.exception("Error in import_csv_endpoint")
+        return jsonify({'error': 'Internal server error'}), 500
 
 
 @app.route('/api/portfolio-with-deposits', methods=['POST'])
+@require_auth
 def get_portfolio_with_deposits():
     """API endpoint to get portfolio analysis with deposit simulations"""
     try:
@@ -207,6 +291,8 @@ def get_portfolio_with_deposits():
 
         # Apply deposit adjustments to cash balances
         for account, deposit_amount in deposit_adjustments.items():
+            if not isinstance(deposit_amount, (int, float)):
+                continue
             if deposit_amount > 0:
                 cash_balances[account] = cash_balances.get(account, 0) + deposit_amount
 
@@ -225,7 +311,6 @@ def get_portfolio_with_deposits():
         # Create Holding objects for analysis
         holdings = []
         for h in holdings_data:
-            owner_name = "Ed Forrester" if h['owner'] == "EF" else "Lucy Forrester"
             holding = Holding(
                 owner=h['owner'],
                 asset_type=h['asset_type'],
@@ -254,16 +339,23 @@ def get_portfolio_with_deposits():
 
         return jsonify(results)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.exception("Error in get_portfolio_with_deposits")
+        return jsonify({'error': 'Internal server error'}), 500
 
 
 @app.route('/api/holdings/update-ticker-value', methods=['POST'])
+@require_auth
 def update_ticker_value_endpoint():
     """Update value for a ticker - either by new total value or new per-unit price"""
     try:
         ticker = request.json['ticker']
         new_value = request.json.get('new_value')
         new_price = request.json.get('new_price')
+
+        if new_price is not None:
+            validate_positive_number(new_price, 'new_price')
+        elif new_value is not None:
+            validate_positive_number(new_value, 'new_value')
 
         data = load_portfolio_data()
         holdings = data['holdings']
@@ -326,11 +418,15 @@ def update_ticker_value_endpoint():
         save_portfolio_data(data)
 
         return jsonify({'success': True})
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.exception("Error in update_ticker_value_endpoint")
+        return jsonify({'error': 'Internal server error'}), 500
 
 
 @app.route('/api/refresh-prices', methods=['POST'])
+@require_auth
 def refresh_prices_endpoint():
     """Fetch live prices from Yahoo Finance and update holdings"""
     try:
@@ -341,10 +437,12 @@ def refresh_prices_endpoint():
             'prices': results
         })
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.exception("Error in refresh_prices_endpoint")
+        return jsonify({'error': 'Internal server error'}), 500
 
 
 @app.route('/api/price-sources')
+@require_auth
 def price_sources_endpoint():
     """Get price source info for all holdings"""
     try:
@@ -360,14 +458,17 @@ def price_sources_endpoint():
                 sources[t] = {'source': 'Manual', 'url': None}
         return jsonify(sources)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.exception("Error in price_sources_endpoint")
+        return jsonify({'error': 'Internal server error'}), 500
 
 
 @app.route('/api/holdings/update-price', methods=['POST'])
+@require_auth
 def update_price_endpoint():
     """Manually update per-unit price for a holding"""
     try:
         data = request.json
+        validate_positive_number(data['price'], 'price')
         success = update_holding_price(
             data['ticker'],
             data['account'],
@@ -375,16 +476,23 @@ def update_price_endpoint():
             data['price']
         )
         return jsonify({'success': success})
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.exception("Error in update_price_endpoint")
+        return jsonify({'error': 'Internal server error'}), 500
 
 
 @app.route('/api/holdings/update-ticker-target', methods=['POST'])
+@require_auth
 def update_ticker_target_endpoint():
     """Update target weight for all holdings of a ticker"""
     try:
         ticker = request.json['ticker']
         new_target = request.json['new_target']
+        validate_non_negative_number(new_target, 'new_target')
+        if new_target > 100:
+            return jsonify({'error': 'new_target must be 100 or less'}), 400
 
         data = load_portfolio_data()
         holdings = data['holdings']
@@ -403,12 +511,14 @@ def update_ticker_target_endpoint():
         save_portfolio_data(data)
 
         return jsonify({'success': True})
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.exception("Error in update_ticker_target_endpoint")
+        return jsonify({'error': 'Internal server error'}), 500
 
 
 if __name__ == '__main__':
-    import os
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('RAILWAY_ENVIRONMENT') is None
     app.run(debug=debug, host='0.0.0.0', port=port)
